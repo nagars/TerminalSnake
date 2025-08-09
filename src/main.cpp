@@ -1,0 +1,1 @@
+// Main file. Entry of code. Instantiates game class that starts the game.

@@ -1,0 +1,1 @@
+// Catches inputs from the user and sends signals to the snake class
