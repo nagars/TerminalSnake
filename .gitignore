@@ -1,0 +1,5 @@
+# Ignore the build directory which contains object files
+build/
+
+# Ignore the final executable
+snake
