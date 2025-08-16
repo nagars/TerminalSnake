@@ -25,15 +25,17 @@ frame::frame(void){
         std::cerr << "Runtime error caught: " << e.what() << std::endl;
     }
 
-    // Create a string for an empty row of the frame
-    std::string blankRow(termSize.cols - 2, ' ');
-    blankRow.append("\n");
+    // // Create a string for an empty row of the frame
+    // std::string blankRow(termSize.cols - 2, ' ');
+    // blankRow.append("\n");
 
-    // Fill the file with the current empty frame
-    for(uint16_t n = 0; n < termSize.rows; n++){
-        updateFrameRow(blankRow, n);
-    }
+    // // Fill the file with the current empty frame
+    // for(uint16_t n = 0; n < termSize.rows; n++){
+    //     updateFrameRow(blankRow, n);
+    // }
     
+    clearFrame();
+
     // Print to terminal
     //printFrame();
 }
@@ -57,15 +59,39 @@ frame::~frame(void){
 
 }
 
-void frame::resizeFrame(void){                 // Check size and rebuild frame in temp file
+void frame::clearFrame(void){
 
-    // Get terminal size
-    // Set size variables
-    termSize = getTerminalSize();
+    // Update terminal size
+    termSize = getTerminalSize();  
+
+    // Create a string for an empty row of the frame
+    std::string blankRow(termSize.cols - 2, ' ');
+    blankRow.append("\n");
+
+    // Fill the file with the current empty frame
+    for(uint16_t n = 0; n < termSize.rows; n++){
+        updateFrameRow(blankRow, n);
+    }
 
 }
 
+s_size frame::getFrameSize(void){
+
+    return termSize;
+}
+
+// void frame::resizeFrame(void){                 // Check size and rebuild frame in temp file
+
+//     // Get terminal size
+//     // Set size variables
+//     termSize = getTerminalSize();
+
+// }
+
 void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update the frame in temp file
+
+    // Update terminal size
+    termSize = getTerminalSize();  
 
     // Check if row and col are valid
     if(row > termSize.rows || col > termSize.cols){
@@ -79,6 +105,9 @@ void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update t
 }
 
 void frame::updateFrameRow(const std::string c, uint16_t row){                  // Update the frame in temp file
+
+    // Update terminal size
+    termSize = getTerminalSize();  
 
     // Check if row is valid
     if(row > termSize.rows){
@@ -100,6 +129,9 @@ void frame::updateFrameRow(const std::string c, uint16_t row){                  
 
 void frame::printFrame(void){  // Print frame to terminal
 
+    DEBUG_PRINT ("lines %d\n", termSize.rows);
+    DEBUG_PRINT ("columns %d\n", termSize.cols);
+
     // Clear terminal
     std::cout << "\x1b[2J\x1b[H" << std::flush; 
 
@@ -117,9 +149,6 @@ s_size frame::getTerminalSize(void){
 
     termSize.cols = w.ws_col;
     termSize.rows = w.ws_row;
-
-    DEBUG_PRINT ("lines %d\n", w.ws_row);
-    DEBUG_PRINT ("columns %d\n", w.ws_col);
 
     return termSize;
 }

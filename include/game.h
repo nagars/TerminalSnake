@@ -7,15 +7,23 @@
 class snakeGame : public frame {
     public:
     snakeGame();    // setup signal trap (SIGWINCH) and user input
+    
+    void run();
+    // void pause();
+    // void exit();
+    // void reset();
 
     private:
-    void run();
-    void pause();
-    void exit();
-
-    snake sneakySnake;            // snake object
+    snake sneakySnake;      // snake object
     s_pos foodPos;          // food position
     uint16_t sleepTime;     // time between each game loop
+
+    bool foodConsumed();
+    void placeFood();
+    void collisionBody();
+    void collisionBorder();
+    void updateSnake(char cmd);
+    void updateFrameLayout();
 
     protected:
 };

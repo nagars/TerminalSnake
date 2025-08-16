@@ -22,10 +22,12 @@ class frame{
     frame();        // Setup temp file with frame. Get terminal size. 
     ~frame();
 
-    void resizeFrame(void);                 // Check size and rebuild frame in temp file
+    // void resizeFrame(void);                 // Check size and rebuild frame in temp file
     void updateFrameElement(char c, uint16_t row, uint16_t col);  // Update the frame in temp file
     void updateFrameRow(const std::string c, uint16_t row);                  // Update the frame in temp file
+    void clearFrame(void);
     void printFrame(void);  // Print frame to terminal
+    s_size getFrameSize(void);
 
     private:
     s_size termSize;                // size of terminal

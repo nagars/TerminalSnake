@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <vector>
 
-
+// Characters to be printed to terminal
 #define SNAKE_HEAD_EAST     '>'
 #define SNAKE_HEAD_WEST     '<'
 #define SNAKE_HEAD_NORTH    '^'
@@ -13,22 +13,31 @@
 #define SNAKE_BODY_HORIZ    '-'
 #define SNAKE_FOOD          '*'
 
+typedef enum {
+    DIR_NORTH,
+    DIR_SOUTH,
+    DIR_EAST,
+    DIR_WEST
+}e_DIR;
+
 typedef struct {
-    uint16_t x;
-    uint16_t y;
+    uint16_t x;         // X axis (Cols)
+    uint16_t y;         // Y axis (rows)
 }s_pos;
 
 class snakeBodyElement {
     public:
     snakeBodyElement(s_pos position, char design);
 
-    void setPos(s_pos pos);
+    void setPos(s_pos position);
     s_pos getPos(void);
-    void setdesign(char design);
+    void setDesign(char c);
+    char getDesign(void);
+
 
     private:
     s_pos pos;      // position in frame
-    char design;    // What to print
+    char design = '|';    // What to print
 
     protected:
 };
@@ -36,19 +45,30 @@ class snakeBodyElement {
 class snake {
     public:
     snake();
-    snake(char c);          // Sets design
+    snake(e_DIR dir);          // Sets design
     snake(s_pos position);  // Sets position of head
-    snake(s_pos position, char c);  // Sets both design and position of head
+    snake(s_pos position, e_DIR dir);  // Sets both design and position of head
 
     void setHeadPos(const s_pos pos);
     s_pos getHeadPos(void);
-    void setdesign(const char c);
+    void setDirection(e_DIR);
+    e_DIR getDirection(void);
+    char getDesign(void);
+
     void extendSnake(void);
+    void moveSnake(void);
+
+    const std::vector<snakeBodyElement>& getBody (void);    // Return a constant reference to the body
+                                                            // of the snake
 
     private:
-    s_pos headPos;      // Position in terminal based on row and col
-    char design;        // Character to print
+    s_pos headPos;              // Position in terminal based on row and col
+    char design = '^';          // Character to print. Used to track direction
+    e_DIR direction = DIR_NORTH;
     std::vector<snakeBodyElement> body;
+
+    void setDesign(e_DIR);
+    void moveHead(void);
 
     protected:
 };
