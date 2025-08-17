@@ -59,6 +59,11 @@ void snakeGame::run(){
     // Print frame to terminal
     printFrame();
 
+    // Check if a collission occurred
+    if(true == checkCollision()){
+        exit();
+        return;
+    }
     // get latest command
     // use command to set next position of snake and design
     updateSnake(cmd);
@@ -70,11 +75,11 @@ void snakeGame::run(){
 }
     
 void snakeGame::updateFrameLayout(void){
+    
+    s_pos pos;
+
     // Update the frame with new positions    
     updateFrameElement(SNAKE_FOOD, foodPos.y, foodPos.x);
-
-    s_pos pos = sneakySnake.getHeadPos();
-    updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
 
     // Iterate through the snake body and update frame
     std::vector<snakeBodyElement> snakeBody = sneakySnake.getBody();
@@ -82,19 +87,28 @@ void snakeGame::updateFrameLayout(void){
         pos = element.getPos();
         updateFrameElement(element.getDesign(), pos.y, pos.x);
     }
-//     for(uint16_t n = 0; n < snakeBody.size(); n++){
-//         pos = snakeBody[n].getPos();
-//         updateFrameElement(snakeBody[n].getDesign(), pos.y, pos.x);
-//     }
+
+    pos  = sneakySnake.getHeadPos();
+    updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
 }
 
 // void snakeGame::pause(){
 
 // }
 
-// void snakeGame::exit(){
+void snakeGame::exit(){
 
-// }
+    // Flash snake
+    for(uint8_t n = 0; n < 5; n++){
+        clearFrame();
+        printFrame();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300)); // Pause for a short time
+        updateFrameLayout();
+        printFrame();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300)); // Pause for a short time
+    }
+
+}
 
 bool snakeGame::foodConsumed(void){
     
@@ -114,11 +128,11 @@ void snakeGame::placeFood(void){
     std::mt19937 gen(rd()); // Seed the generator
 
     // For columns
-    std::uniform_int_distribution<> distrib0(0, frameLimit.cols); // Define the distribution
+    std::uniform_int_distribution<> distrib0(1, frameLimit.cols - 1); // Define the distribution
     foodPos.x = distrib0(gen); // Generate the random number
 
     // For rows
-    std::uniform_int_distribution<> distrib1(0, frameLimit.rows); // Define the distribution
+    std::uniform_int_distribution<> distrib1(1, frameLimit.rows - 1); // Define the distribution
     foodPos.y = distrib1(gen); // Generate the random number
 }
 
@@ -164,3 +178,9 @@ void snakeGame::updateSnake(char cmd){
     sneakySnake.moveSnake();
 
 }
+
+bool snakeGame::checkCollision(){
+
+    return sneakySnake.getCollsionStatus();
+}
+

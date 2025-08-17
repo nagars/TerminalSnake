@@ -10,7 +10,7 @@ class snakeGame : public frame {
     
     void run();
     // void pause();
-    // void exit();
+    void exit();
     // void reset();
 
     private:
@@ -20,8 +20,7 @@ class snakeGame : public frame {
 
     bool foodConsumed();
     void placeFood();
-    void collisionBody();
-    void collisionBorder();
+    bool checkCollision();
     void updateSnake(char cmd);
     void updateFrameLayout();
 

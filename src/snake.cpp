@@ -164,17 +164,37 @@ void snake::moveHead(void){
         break;
     }
 
+    // Check if a collision occurred
+    checkCollision();
 }
 
 char snake::getDesign(void){
     return design;
 }
 
+bool snake::getCollsionStatus(void){
+    return f_collisionOccurred;
+}   
 
 const std::vector<snakeBodyElement>& snake::getBody(void){
     return body;
 } 
 
+void snake::checkCollision(void){
+    
+    // Iterate through body elements
+    // Ensure head position does not match
+    // any body elements position
+    for(snakeBodyElement element: body){
+        s_pos elementPos = element.getPos();
+        if((headPos.x == elementPos.x) && (headPos.y == elementPos.y)){
+            f_collisionOccurred = true;
+            return;
+        }
+    }
+    
+    f_collisionOccurred = false;
+}
 
 snakeBodyElement::snakeBodyElement(s_pos position, char design): pos(position), design(design){
 

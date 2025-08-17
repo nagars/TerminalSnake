@@ -54,9 +54,11 @@ class snake {
     void setDirection(e_DIR);
     e_DIR getDirection(void);
     char getDesign(void);
+    bool getCollsionStatus(void);       // True if head collides with body. Refreshed on each move.
 
     void extendSnake(void);
     void moveSnake(void);
+    void checkCollision(void);
 
     const std::vector<snakeBodyElement>& getBody (void);    // Return a constant reference to the body
                                                             // of the snake
@@ -66,6 +68,8 @@ class snake {
     char design = '^';          // Character to print. Used to track direction
     e_DIR direction = DIR_NORTH;
     std::vector<snakeBodyElement> body;
+
+    bool f_collisionOccurred = false;
 
     void setDesign(e_DIR);
     void moveHead(void);
