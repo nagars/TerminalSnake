@@ -2,12 +2,22 @@
 
 #include "game.h"
 #include "common.h"
+#include <unistd.h> // For read()
+#include <termios.h> // For termios functions
 #include <random> // For random number generation facilities
 
 
 snakeGame::snakeGame(){
 
 // Setup catching keyboard inputs (wasd, space)
+
+// Change terminal settings to a non-blocking read
+struct termios attr;
+tcgetattr(STDIN_FILENO, &attr); // Get current terminal attributes
+attr.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echoing
+attr.c_cc[VMIN] = 0;        // Read returns immediately (Polling / non-blocking)
+attr.c_cc[VTIME] = 0;       // Read has no timeout
+tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 
 // Setup catching signals (SIGINT | SIGKILL | SIGTERM)
 
@@ -33,6 +43,9 @@ void snakeGame::run(){
 
     while(1){
 
+    char cmd;
+    read(STDIN_FILENO, &cmd, 1);
+
     // Check if food is consumed
     if(true == foodConsumed()){
         // If yes, place new food and extend the snake body
@@ -41,7 +54,6 @@ void snakeGame::run(){
     }
 
     clearFrame();
-
     updateFrameLayout();
 
     // Print frame to terminal
@@ -49,10 +61,11 @@ void snakeGame::run(){
 
     // get latest command
     // use command to set next position of snake and design
-    updateSnake('w');
+    updateSnake(cmd);
+    DEBUG_PRINT("\rCommand Received: %c\n",cmd);
 
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Pause for a short time
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Pause for a short time
     }
 }
     
@@ -63,11 +76,16 @@ void snakeGame::updateFrameLayout(void){
     s_pos pos = sneakySnake.getHeadPos();
     updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
 
+    // Iterate through the snake body and update frame
     std::vector<snakeBodyElement> snakeBody = sneakySnake.getBody();
     for(snakeBodyElement element: snakeBody){
         pos = element.getPos();
         updateFrameElement(element.getDesign(), pos.y, pos.x);
     }
+//     for(uint16_t n = 0; n < snakeBody.size(); n++){
+//         pos = snakeBody[n].getPos();
+//         updateFrameElement(snakeBody[n].getDesign(), pos.y, pos.x);
+//     }
 }
 
 // void snakeGame::pause(){
@@ -102,10 +120,6 @@ void snakeGame::placeFood(void){
     // For rows
     std::uniform_int_distribution<> distrib1(0, frameLimit.rows); // Define the distribution
     foodPos.y = distrib1(gen); // Generate the random number
-
-
-    // foodPos = sneakySnake.getHeadPos();
-    // foodPos.y -=5;
 }
 
 void snakeGame::updateSnake(char cmd){
@@ -123,7 +137,7 @@ void snakeGame::updateSnake(char cmd){
         case 'd':
         case 'D':
             if((dir == DIR_NORTH)||(dir == DIR_SOUTH)){
-                sneakySnake.setDirection(DIR_WEST);
+                sneakySnake.setDirection(DIR_EAST);
             }
 
         break;

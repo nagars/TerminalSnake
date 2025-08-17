@@ -72,26 +72,49 @@ void snake::extendSnake(void){
     // tracking size of the snake in terms of individual
     // elements
 
-    char c;
-    // Based on direction of snake, set what character to be used
-    // to define body element
-    if((direction == DIR_EAST) || (direction == DIR_WEST)){
-        c = SNAKE_BODY_HORIZ;
-    }else if((direction == DIR_NORTH)||(direction == DIR_SOUTH)){
-        c = SNAKE_BODY_VERT;
+    // Check if there another element in the body
+    if(body.size() > 0){
+        // Copy the last element
+        snakeBodyElement lastElement = body.back();
+        // Move the snake
+        moveSnake();
+        // Append the copy as a new element to the snake
+        body.emplace_back(lastElement);
+
+    }else if(body.size() == 0){
+        
+        char c;
+        // Based on direction of snake, set what character to be used
+        // to define body element
+        if((direction == DIR_EAST) || (direction == DIR_WEST)){
+            c = SNAKE_BODY_HORIZ;
+        }else if((direction == DIR_NORTH)||(direction == DIR_SOUTH)){
+            c = SNAKE_BODY_VERT;
+        }
+
+        // Else add the first body element
+        body.emplace_back(snakeBodyElement(headPos, c));
+        // Move head based on direction
+        moveHead();
     }
-
-    // Append body Element to snake body vector
-    body.emplace_back(snakeBodyElement(headPos, c));
-
-    // Move head based on direction
-    moveHead();
 
 }
 
 void snake::moveSnake(void){
 
+    DEBUG_PRINT("Snake size: %ld\n", body.size());
+
+    // If no body exists. Else just move the head
     if(body.size() > 0){
+
+        // If multiple body elements, move each one up
+        if(body.size() > 1){
+            // Iterate through body and update positions
+            for(uint16_t n = body.size() - 1; n >= 1; n--){
+                body[n] = body[n - 1]; 
+            }
+        }
+
         // Move first body element to head position
         body[0].setPos(headPos);
 
@@ -112,18 +135,10 @@ void snake::moveSnake(void){
             break;
         }
 
-        if(body.size() > 1){
-            // Iterate through body and update positions
-            for(uint16_t n = 0; n < body.size(); n++){
-                body[n+1] = body[n]; 
-            }
-        }
-}
+    }
 
     // Move the head based on direction of the head
     moveHead();
-
-
 }
 
 void snake::moveHead(void){

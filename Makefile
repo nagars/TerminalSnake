@@ -4,7 +4,10 @@ CXX = g++
 # -Iinclude: Tell the compiler to look for header files in the 'include' directory
 # -Wall: Enable all warnings
 # -std=c++11: Use the C++11 standard
-CXXFLAGS = -Iinclude -Wall -std=c++11
+CXXFLAGS = -Iinclude -Wall -std=c++11 
+
+# Define linker flags, including ncurses
+#LDFLAGS = -lncurses
 
 # The name of the executable
 TARGET = snake
@@ -19,7 +22,7 @@ all: $(TARGET)
 
 # Rule to link the object files into the final executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 # Rule to compile a .cpp file into a .o file
 # This rule will be used for each source file

@@ -134,6 +134,7 @@ void frame::printFrame(void){  // Print frame to terminal
 
     // Clear terminal
     std::cout << "\x1b[2J\x1b[H" << std::flush; 
+    std::cout << "\033[1m"; 
 
     // Print temp file to terminal
     frameFileIn.seekg(0, std::ios::beg); // Move the pointer to the beginning
