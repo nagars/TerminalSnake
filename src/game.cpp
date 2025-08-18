@@ -2,14 +2,15 @@
 
 #include "game.h"
 #include "common.h"
+#include <iostream>
 #include <unistd.h> // For read()
 #include <termios.h> // For termios functions
 #include <random> // For random number generation facilities
 
+#define MIN_SIZE_ROW    15
+#define MIN_SIZE_COL    50
 
 snakeGame::snakeGame(){
-
-// Setup catching keyboard inputs (wasd, space)
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
@@ -30,8 +31,21 @@ void snakeGame::run(){
 
     // Main loop
 
-    // Set the position of the snake
+    // Get the size of the terminal
     s_size termSize = getFrameSize();
+    DEBUG_PRINT("\rTerminal Size: %d,%d\n",termSize.cols, termSize.rows);
+
+    // Check if terminal size is larger than minimum required.
+    try{
+        if((termSize.cols < MIN_SIZE_COL) || (termSize.rows < MIN_SIZE_ROW)){
+            throw(std::runtime_error("Terminal size is too small!"));
+        }
+    }catch(const std::runtime_error& e){
+            std::cerr << "Runtime error caught: " << e.what() << std::endl;
+            return;
+    }
+
+    // Set the position of the snake in the centre of the screen
     s_pos pos;
     pos.y = termSize.rows/2;
     pos.x = termSize.cols/2;
@@ -92,9 +106,6 @@ void snakeGame::updateFrameLayout(void){
     updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
 }
 
-// void snakeGame::pause(){
-
-// }
 
 void snakeGame::exit(){
 

@@ -10,7 +10,7 @@ frame::frame(void){
 
     // Get the terminal size and build the frame limits
     // set termSize variable
-    termSize = getTerminalSize();    
+    termSize = getTerminalSize();
 
     // Create a text file with the current empty frame
     try{
@@ -24,20 +24,8 @@ frame::frame(void){
     }catch(const std::runtime_error& e){
         std::cerr << "Runtime error caught: " << e.what() << std::endl;
     }
-
-    // // Create a string for an empty row of the frame
-    // std::string blankRow(termSize.cols - 2, ' ');
-    // blankRow.append("\n");
-
-    // // Fill the file with the current empty frame
-    // for(uint16_t n = 0; n < termSize.rows; n++){
-    //     updateFrameRow(blankRow, n);
-    // }
     
     clearFrame();
-
-    // Print to terminal
-    //printFrame();
 }
 
 frame::~frame(void){
@@ -80,13 +68,6 @@ s_size frame::getFrameSize(void){
     return termSize;
 }
 
-// void frame::resizeFrame(void){                 // Check size and rebuild frame in temp file
-
-//     // Get terminal size
-//     // Set size variables
-//     termSize = getTerminalSize();
-
-// }
 
 void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update the frame in temp file
 
