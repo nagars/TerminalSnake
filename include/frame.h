@@ -20,14 +20,19 @@ typedef struct {
 class frame{
     public:
     frame();        // Setup temp file with frame. Get terminal size. 
+    frame(char border);
     ~frame();
 
     // void resizeFrame(void);                 // Check size and rebuild frame in temp file
     void updateFrameElement(char c, uint16_t row, uint16_t col);  // Update the frame in temp file
-    void updateFrameRow(const std::string c, uint16_t row);                  // Update the frame in temp file
+    void updateFrameRow(const std::string& c, uint16_t row);                  // Update the frame in temp file
     void clearFrame(void);
     void printFrame(void);  // Print frame to terminal
     s_size getFrameSize(void);
+
+    void enableBorder(char border);
+    void enableBorder();
+    void disableBorder();
 
     private:
     s_size termSize;                // size of terminal
@@ -36,7 +41,9 @@ class frame{
     s_size getTerminalSize(void);           // Get terminal size
 
     protected:
-    std::string filename = "temp";       
+    std::string filename = "temp";   
+    bool f_setBorder = false;   
+    char borderChar = '#'; 
 
 };
 
