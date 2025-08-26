@@ -30,7 +30,7 @@ tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 void snakeGame::run(){
 
     // Main loop
-    enableBorder();
+    //enableBorder();
 
     // Get the size of the terminal
     s_size termSize = getFrameSize();
