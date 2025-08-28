@@ -11,6 +11,11 @@
 // 0,0 0,1 0,2
 // 1,0 1,1 1,2
 
+#define FRAME_BUFFER    1
+#define FRAME_BORDER_WIDTH  1
+
+#define FRAME_OFFSET FRAME_BUFFER + FRAME_BORDER_WIDTH
+
 typedef struct {
     uint16_t rows;
     uint16_t cols;
@@ -30,6 +35,7 @@ class frame{
     void clearFrame(void);
     void printFrame(void);  // Print frame to terminal
     s_size getFrameSize(void);
+    bool isWithinFrame(s_pos pos);
 
     void enableBorder(char border);
     void enableBorder();

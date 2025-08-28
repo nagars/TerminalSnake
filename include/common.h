@@ -5,12 +5,18 @@
 #include <chrono>  // For std::chrono::seconds
 #include <cstdio>
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
     #define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #else
     #define DEBUG_PRINT(...) ((void)0)
 #endif
+
+typedef struct {
+    uint16_t x;         // X axis (Cols)
+    uint16_t y;         // Y axis (rows)
+}s_pos;
+
 
 #endif

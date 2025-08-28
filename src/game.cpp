@@ -8,7 +8,9 @@
 #include <random> // For random number generation facilities
 
 #define MIN_SIZE_ROW    15
-#define MIN_SIZE_COL    50
+#define MIN_SIZE_COL    20
+
+#define SPEED_UP 10
 
 snakeGame::snakeGame(){
 
@@ -30,7 +32,7 @@ tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 void snakeGame::run(){
 
     // Main loop
-    //enableBorder();
+    enableBorder();
 
     // Get the size of the terminal
     s_size termSize = getFrameSize();
@@ -56,36 +58,60 @@ void snakeGame::run(){
     // Start by placing food
     placeFood();
 
+    // Store command from terminal
+    char cmd;
+
+    // total food consumed
+    uint16_t numFoodConsumed = 0;
+    
+    // Sleep delay
+    uint16_t sleep_ms = 100; 
+
     while(1){
 
-    char cmd;
-    read(STDIN_FILENO, &cmd, 1);
+        // read command from terminal
+        read(STDIN_FILENO, &cmd, 1);
 
-    // Check if food is consumed
-    if(true == foodConsumed()){
-        // If yes, place new food and extend the snake body
-        sneakySnake.extendSnake();
-        placeFood();
-    }
+        // Check if food is consumed
+        if(true == foodConsumed()){
+            // If yes, place new food and extend the snake body
+            sneakySnake.extendSnake();
+            placeFood();
+            numFoodConsumed += 1;
+            
+            if(numFoodConsumed % 5 == 0)
+                sleep_ms -= SPEED_UP;
+        }
 
-    clearFrame();
-    updateFrameLayout();
+        // Check if a collision occurred
+        if(true == checkCollision()){
+            endGame();
+            return;
+        }
 
-    // Print frame to terminal
-    printFrame();
+        // Check border collision
+        if(true == checkBorderCollision()){
+            endGame();
+            return;
+        }
 
-    // Check if a collission occurred
-    if(true == checkCollision()){
-        exit();
-        return;
-    }
-    // get latest command
-    // use command to set next position of snake and design
-    updateSnake(cmd);
-    DEBUG_PRINT("\rCommand Received: %c\n",cmd);
+        clearFrame();
+        updateFrameLayout();
 
+        // Print frame to terminal
+        printFrame();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Pause for a short time
+        // get latest command
+        // use command to set next position of snake and design
+        updateSnake(cmd);
+        
+        #ifdef DEBUG
+        s_pos pos = sneakySnake.getHeadPos();
+        printf("\rPosition %d,%d\n",pos.x, pos.y);
+        DEBUG_PRINT("\rCommand Received: %c\n",cmd);
+        #endif
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms)); // Pause for a short time
     }
 }
     
@@ -108,7 +134,7 @@ void snakeGame::updateFrameLayout(void){
 }
 
 
-void snakeGame::exit(){
+void snakeGame::endGame(){
 
     // Flash snake
     for(uint8_t n = 0; n < 5; n++){
@@ -140,11 +166,11 @@ void snakeGame::placeFood(void){
     std::mt19937 gen(rd()); // Seed the generator
 
     // For columns
-    std::uniform_int_distribution<> distrib0(1, frameLimit.cols - 1); // Define the distribution
+    std::uniform_int_distribution<> distrib0(FRAME_OFFSET, frameLimit.cols - 1); // Define the distribution
     foodPos.x = distrib0(gen); // Generate the random number
 
     // For rows
-    std::uniform_int_distribution<> distrib1(1, frameLimit.rows - 1); // Define the distribution
+    std::uniform_int_distribution<> distrib1(FRAME_OFFSET, frameLimit.rows - 1); // Define the distribution
     foodPos.y = distrib1(gen); // Generate the random number
 }
 
@@ -196,3 +222,29 @@ bool snakeGame::checkCollision(){
     return sneakySnake.getCollsionStatus();
 }
 
+bool snakeGame::checkBorderCollision(){
+
+    // Predict next position of snake head
+    // and check if border collision will occur
+    s_pos snakePos = sneakySnake.getHeadPos();
+    e_DIR direction = sneakySnake.getDirection();
+
+    switch(direction){
+        case DIR_NORTH:
+        snakePos.y -= 1;
+        break;
+        case DIR_SOUTH:
+        snakePos.y += 1;
+        break;
+        case DIR_EAST:
+        snakePos.x += 1;
+        break;
+        case DIR_WEST:
+        snakePos.x -= 1;
+        break;
+        default:
+        break;
+    }
+
+    return !isWithinFrame(snakePos);
+}

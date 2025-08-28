@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include "common.h"
 
 // Characters to be printed to terminal
 #define SNAKE_HEAD_EAST     '>'
@@ -19,11 +20,6 @@ typedef enum {
     DIR_EAST,
     DIR_WEST
 }e_DIR;
-
-typedef struct {
-    uint16_t x;         // X axis (Cols)
-    uint16_t y;         // Y axis (rows)
-}s_pos;
 
 class snakeBodyElement {
     public:

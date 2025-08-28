@@ -6,11 +6,6 @@
 #include <cstdio> 
 #include "frame.h"
 
-#define FRAME_BUFFER    1
-#define FRAME_BORDER_WIDTH  1
-
-#define FILE_OFFSET FRAME_BUFFER + FRAME_BORDER_WIDTH
-
 frame::frame(void){
 
     // Get the terminal size and build the frame limits
@@ -149,8 +144,18 @@ void frame::disableBorder(){
 
 s_size frame::getFrameSize(void){
 
-    return termSize;
+    s_size size;
+
+    if(f_setBorder == true){
+        size = getBorderedFrameSize();
+
+    }else{
+        size = getTerminalSize();
+    }
+
+    return size;
 }
+
 
 s_size frame::getBorderedFrameSize(void){
 
@@ -159,7 +164,7 @@ s_size frame::getBorderedFrameSize(void){
 
     // Set the frame size variable
     borderedFrameSize.cols = termSize.cols - FRAME_BUFFER - 2*FRAME_BORDER_WIDTH - 1;    // 1 space, 2 border, 1 '\n'
-    borderedFrameSize.rows = termSize.rows - FRAME_BUFFER - 2*FRAME_BORDER_WIDTH;    // 1 space, 2 border
+    borderedFrameSize.rows = termSize.rows - 2*FRAME_BORDER_WIDTH;    // 1 space, 2 border
 
     return borderedFrameSize;
 }
@@ -173,23 +178,23 @@ void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update t
         getBorderedFrameSize();
 
         // Check if row is valid
-        if((row < 1) || (row > borderedFrameSize.rows)){
+        if((row < 1) || (row > borderedFrameSize.rows + FRAME_BUFFER)){
             std::cerr << "Requested row violates frame border" << std::endl;
             return;
         }   
 
         // Check if column is valid
-        if((col < 1) || (col > borderedFrameSize.cols)){
+        if((col < 1) || (col > borderedFrameSize.cols + 2*FRAME_BORDER_WIDTH)){
             std::cerr << "Requested column violates frame border" << std::endl;
             return;
         }
 
         // Update the character in the temp frame file at the provided position
-        if(row == 1){
-            writeToFile(c, FILE_OFFSET + col);
+        if(row == 0){
+            writeToFile(c, FRAME_OFFSET + col);
 
-        }else if(row > 1){
-            writeToFile(c, row*(FILE_OFFSET + borderedFrameSize.cols + FILE_OFFSET) + col);
+        }else if(row > 0){
+            writeToFile(c, row*(FRAME_OFFSET + borderedFrameSize.cols + FRAME_OFFSET) + col);
         }
 
     }else{
@@ -213,12 +218,10 @@ void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update t
         writeToFile(c, row*termSize.cols + col);
     }
 
-
 }
 
 
 void frame::updateFrameRow(const std::string& c, uint16_t row){                  // Update the frame in temp file
-
 
     if(f_setBorder == true){
 
@@ -277,8 +280,6 @@ void frame::writeToFile(const char c, uint16_t pos){
     frameFileOut << c << std::flush;
 }
 
-
-
 void frame::printFrame(void){  // Print frame to terminal
 
     DEBUG_PRINT ("lines %d\n", termSize.rows);
@@ -302,5 +303,48 @@ s_size frame::getTerminalSize(void){
     termSize.cols = w.ws_col;
     termSize.rows = w.ws_row;
 
+    #ifdef DEBUG
+    // Add space for debug data. Arbitrary rows reserved.
+    termSize.rows -= 2;
+    #endif
+
     return termSize;
 }
+
+bool frame::isWithinFrame(s_pos pos){
+  
+    if(f_setBorder == true){
+
+        // Update size of the border
+        getBorderedFrameSize();
+
+        // Check if row is valid
+        if((pos.y < 1) || (pos.y > borderedFrameSize.rows + FRAME_BUFFER)){
+            return false;
+        }   
+
+        // Check if column is valid
+        if((pos.x < 1) || (pos.x > borderedFrameSize.cols + 2*FRAME_BORDER_WIDTH)){
+            return false;
+        }
+
+    }else{
+
+        // Update terminal size
+        getTerminalSize();  
+
+        // Check if row is valid
+        if((pos.y < 1) || (pos.y >= termSize.rows)){
+            return false;
+        }   
+
+        // Check if column is valid
+        if((pos.x < 1) || (pos.x >= termSize.cols)){
+            return false;
+        }
+
+    }
+    
+    return true;
+}
+
