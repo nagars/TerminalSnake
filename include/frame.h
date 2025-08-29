@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <fstream>  
 #include <string.h>
+#include <mutex>
+#include <atomic>
 #include "common.h"
 
 // Frame order
@@ -21,11 +23,14 @@ typedef struct {
     uint16_t cols;
 }s_size;
 
+typedef uint16_t fps;
 
 class frame{
     public:
     frame();        // Setup temp file with frame. Get terminal size. 
     frame(char border);
+    frame(fps fps);
+    frame(fps fps, char border);
     ~frame();
 
     // void resizeFrame(void);                 // Check size and rebuild frame in temp file
@@ -41,6 +46,13 @@ class frame{
     void enableBorder();
     void disableBorder();
 
+    void lockFrameRenderer();
+    void releaseFrameRenderer();
+
+    // A class with a std::thread member cannot be copied.
+    frame(const frame&) = delete;
+    frame& operator=(const frame&) = delete;
+
     private:
     s_size termSize;                // size of terminal
     s_size borderedFrameSize;
@@ -52,12 +64,19 @@ class frame{
     void writeToFile(const std::string& c, uint16_t pos);
     void writeToFile(const char c, uint16_t pos);
 
+    void updateFPS(fps fps);
+
+
     protected:
     std::string filename = "temp";   
-    bool f_setBorder = false;   
+    bool f_setBorder = false;       // Tracks if a frame border has to be created 
+    std::atomic<bool> f_renderActive{false};    // Tracks if the frame printing is being done in a thread 
     char borderChar = '#'; 
-
+    std::mutex renderMutex;
+    fps frameRate = 0;
+    std::thread frameRenderThread;
+    void frameRenderWorker(void);
+    void printFrameWorker(void);
 };
-
 
 #endif

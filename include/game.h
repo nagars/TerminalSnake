@@ -6,7 +6,8 @@
 
 class snakeGame : public frame {
     public:
-    snakeGame();    // setup signal trap (SIGWINCH) and user input
+    snakeGame();    // calls frame constructor with fps active    
+    // setup signal trap (SIGWINCH) and user input
     
     void run();
     // void pause();

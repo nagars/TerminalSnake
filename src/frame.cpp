@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <cstdio> 
+#include <thread>
 #include "frame.h"
 
 frame::frame(void){
@@ -29,7 +30,7 @@ frame::frame(void){
     clearFrame();
 }
 
-frame::frame(char border){
+frame::frame(char border):borderChar(border){
 
     // Get the terminal size and build the frame limits
     // set termSize variable
@@ -50,7 +51,7 @@ frame::frame(char border){
 
     // Set the border flag to true
     f_setBorder = true;
-    borderChar = border;
+    //borderChar = border;
 
     // Set the frame size variable
     getBorderedFrameSize();
@@ -58,11 +59,85 @@ frame::frame(char border){
     clearFrame();
 }
 
+frame::frame(fps fps):frameRate(fps){
+
+     // Get the terminal size and build the frame limits
+    // set termSize variable
+    termSize = getTerminalSize();
+
+    // Create a text file with the current empty frame
+    try{
+        frameFileOut.open(filename);
+        frameFileIn.open(filename);
+
+        // Check if the file was created / opened
+        if ((!frameFileOut.is_open()) || (!frameFileIn.is_open())) {
+            throw(std::runtime_error("Unable to open file!"));
+        }
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+    
+    std::cout << '\r' << std::endl;
+    clearFrame();
+
+    // Initialise the mutex. Do not lock
+    std::unique_lock<std::mutex> lock(renderMutex, std::defer_lock);
+
+    // Start the frame render worker thread
+    frameRenderThread = std::thread(&frame::frameRenderWorker, this);
+    
+}
+
+frame::frame(fps fps, char border):borderChar(border),frameRate(fps){
+
+    // Get the terminal size and build the frame limits
+    // set termSize variable
+    termSize = getTerminalSize();
+
+    // Create a text file with the current empty frame
+    try{
+        frameFileOut.open(filename);
+        frameFileIn.open(filename);
+
+        // Check if the file was created / opened
+        if ((!frameFileOut.is_open()) || (!frameFileIn.is_open())) {
+            throw(std::runtime_error("Unable to open file!"));
+        }
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    // Set the border flag to true
+    f_setBorder = true;
+    //borderChar = border;
+
+    // Set the frame size variable
+    getBorderedFrameSize();
+    
+    clearFrame();
+
+    // Initialise the mutex. Do not lock
+    std::unique_lock<std::mutex> lock(renderMutex, std::defer_lock);
+
+    // Start the frame render thread
+    frameRenderThread = std::thread(&frame::frameRenderWorker, this);
+}
+
 frame::~frame(void){
 
     // Close pointer to temp file
     frameFileOut.close();
     frameFileIn.close();
+
+    // Close thread
+    if(f_renderActive == true){
+        if(frameRenderThread.joinable() == true){
+            f_renderActive = false;     // Trigger the thread to return
+
+            frameRenderThread.join();
+        }
+    }
 
     // delete file
     try {
@@ -75,6 +150,25 @@ frame::~frame(void){
         std::cerr << "Runtime error caught: " << e.what() << std::endl; 
     }
 
+}
+
+void frame::frameRenderWorker(void){
+    // Set the renderer active flag
+    f_renderActive = true;
+
+    while(1){
+
+        // Exit if the flag is set to false. Only done by frame destructor
+        if(f_renderActive == false){
+            return;
+        }
+
+        renderMutex.lock(); 
+        printFrameWorker();
+        renderMutex.unlock();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds((uint16_t)1/frameRate*1000)); // Pause for a short time
+    }
 }
 
 void frame::clearFrame(void){
@@ -169,6 +263,22 @@ s_size frame::getBorderedFrameSize(void){
     return borderedFrameSize;
 }
 
+void frame::lockFrameRenderer(){
+
+    renderMutex.lock();
+}
+
+void frame::releaseFrameRenderer(){
+
+    renderMutex.unlock();
+}
+
+void frame::updateFPS(fps fps){
+
+    if(fps > 0){
+        frameRate = fps;
+    }
+}
 
 void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update the frame in temp file
 
@@ -280,8 +390,8 @@ void frame::writeToFile(const char c, uint16_t pos){
     frameFileOut << c << std::flush;
 }
 
-void frame::printFrame(void){  // Print frame to terminal
-
+void frame::printFrameWorker(void){
+    
     DEBUG_PRINT ("lines %d\n", termSize.rows);
     DEBUG_PRINT ("columns %d\n", termSize.cols);
 
@@ -292,7 +402,16 @@ void frame::printFrame(void){  // Print frame to terminal
     // Print temp file to terminal
     frameFileIn.seekg(0, std::ios::beg); // Move the pointer to the beginning
     std::cout << frameFileIn.rdbuf(); // Copy the file's buffer directly to cout
+}
 
+void frame::printFrame(void){  // Print frame to terminal
+
+    if(f_renderActive == true){
+        printf("Frame initialised to print via internal thread.\n");
+        return;
+    }else{
+        printFrameWorker();
+    }
 }
 
 s_size frame::getTerminalSize(void){

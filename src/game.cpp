@@ -12,7 +12,7 @@
 
 #define SPEED_UP 10
 
-snakeGame::snakeGame(){
+snakeGame::snakeGame() : frame((fps)10){
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
@@ -65,7 +65,7 @@ void snakeGame::run(){
     uint16_t numFoodConsumed = 0;
     
     // Sleep delay
-    uint16_t sleep_ms = 100; 
+    uint16_t sleep_ms = 1; 
 
     while(1){
 
@@ -79,6 +79,7 @@ void snakeGame::run(){
             placeFood();
             numFoodConsumed += 1;
             
+            // Increase speed of snake after every 5 food consumed
             if(numFoodConsumed % 5 == 0)
                 sleep_ms -= SPEED_UP;
         }
@@ -99,7 +100,7 @@ void snakeGame::run(){
         updateFrameLayout();
 
         // Print frame to terminal
-        printFrame();
+        //printFrame();
 
         // get latest command
         // use command to set next position of snake and design
@@ -107,7 +108,7 @@ void snakeGame::run(){
         
         #ifdef DEBUG
         s_pos pos = sneakySnake.getHeadPos();
-        printf("\rPosition %d,%d\n",pos.x, pos.y);
+        DEBUG_PRINT("\rPosition %d,%d\n",pos.x, pos.y);
         DEBUG_PRINT("\rCommand Received: %c\n",cmd);
         #endif
         
@@ -118,6 +119,8 @@ void snakeGame::run(){
 void snakeGame::updateFrameLayout(void){
     
     s_pos pos;
+
+    lockFrameRenderer();
 
     // Update the frame with new positions    
     updateFrameElement(SNAKE_FOOD, foodPos.y, foodPos.x);
@@ -131,6 +134,8 @@ void snakeGame::updateFrameLayout(void){
 
     pos  = sneakySnake.getHeadPos();
     updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
+
+    releaseFrameRenderer();
 }
 
 
