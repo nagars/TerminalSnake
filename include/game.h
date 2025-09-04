@@ -6,8 +6,7 @@
 
 class snakeGame : public frame {
     public:
-    snakeGame();    // calls frame constructor with fps active    
-    // setup signal trap (SIGWINCH) and user input
+    snakeGame();    // calls frame constructor in multi-threaded mode    
     
     void run();
     // void pause();
@@ -17,12 +16,17 @@ class snakeGame : public frame {
     private:
     snake sneakySnake;      // snake object
     s_pos foodPos;          // food position
-    uint16_t sleepTime;     // time between each game loop
+    uint16_t sleepTime;     // time between each game loop (ms)
 
+    // Food
     bool foodConsumed();
     void placeFood();
+
+    // Collision checks
     bool checkCollision();
     bool checkBorderCollision();
+
+    // Update object positions on frame
     void updateSnake(char cmd);
     void updateFrameLayout();
 

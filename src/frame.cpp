@@ -156,6 +156,9 @@ void frame::frameRenderWorker(void){
     // Set the renderer active flag
     f_renderActive = true;
 
+    DEBUG_PRINT ("lines %d\n", termSize.rows);
+    DEBUG_PRINT ("columns %d\n", termSize.cols);
+
     while(1){
 
         // Exit if the flag is set to false. Only done by frame destructor
@@ -167,7 +170,7 @@ void frame::frameRenderWorker(void){
         printFrameWorker();
         renderMutex.unlock();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds((uint16_t)1/frameRate*1000)); // Pause for a short time
+        std::this_thread::sleep_for(std::chrono::milliseconds((uint16_t)1000/frameRate)); // Pause for a short time
     }
 }
 
@@ -392,9 +395,6 @@ void frame::writeToFile(const char c, uint16_t pos){
 
 void frame::printFrameWorker(void){
     
-    DEBUG_PRINT ("lines %d\n", termSize.rows);
-    DEBUG_PRINT ("columns %d\n", termSize.cols);
-
     // Clear terminal
     std::cout << "\x1b[2J\x1b[H" << std::flush; 
     std::cout << "\033[1m"; 

@@ -65,7 +65,7 @@ void snakeGame::run(){
     uint16_t numFoodConsumed = 0;
     
     // Sleep delay
-    uint16_t sleep_ms = 1; 
+    uint16_t sleep_ms = 100; 
 
     while(1){
 
@@ -144,10 +144,10 @@ void snakeGame::endGame(){
     // Flash snake
     for(uint8_t n = 0; n < 5; n++){
         clearFrame();
-        printFrame();
+        //printFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(300)); // Pause for a short time
         updateFrameLayout();
-        printFrame();
+        //printFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(300)); // Pause for a short time
     }
 

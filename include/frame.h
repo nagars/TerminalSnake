@@ -18,6 +18,7 @@
 
 #define FRAME_OFFSET FRAME_BUFFER + FRAME_BORDER_WIDTH
 
+// Tracks the size of the frame / terminal
 typedef struct {
     uint16_t rows;
     uint16_t cols;
@@ -27,56 +28,70 @@ typedef uint16_t fps;
 
 class frame{
     public:
-    frame();        // Setup temp file with frame. Get terminal size. 
+    frame();        
     frame(char border);
+
+    // Initalise with multi-threaded renderer
     frame(fps fps);
     frame(fps fps, char border);
+
     ~frame();
 
-    // void resizeFrame(void);                 // Check size and rebuild frame in temp file
-    void updateFrameElement(char c, uint16_t row, uint16_t col);  // Update the frame in temp file
-    void updateFrameRow(const std::string& c, uint16_t row);                  // Update the frame in temp file
+    // Update temporary file containg the frame
+    void updateFrameElement(char c, uint16_t row, uint16_t col); 
+    void updateFrameRow(const std::string& c, uint16_t row);   
+    void clearFrame(void);              
 
-    void clearFrame(void);
-    void printFrame(void);  // Print frame to terminal
+    // Write to terminal
+    void printFrame(void);  
+
     s_size getFrameSize(void);
     bool isWithinFrame(s_pos pos);
 
+    // Setter / Getters
     void enableBorder(char border);
     void enableBorder();
     void disableBorder();
 
+    // Mutex APIs
     void lockFrameRenderer();
     void releaseFrameRenderer();
 
-    // A class with a std::thread member cannot be copied.
+    // A class with a std::thread member cannot be copied
     frame(const frame&) = delete;
     frame& operator=(const frame&) = delete;
 
     private:
-    s_size termSize;                // size of terminal
-    s_size borderedFrameSize;
-    std::ofstream frameFileOut;       // OUtput file stream used for frame printing to terminal
-    std::ifstream frameFileIn;   // Input file stream used for frame printing to terminal
-    s_size getTerminalSize(void);           // Get terminal size
+    s_size termSize;                // size of terminal to be written to 
+    s_size borderedFrameSize;       // size of the frame when initialised with a border
+    std::ofstream frameFileOut;     // Output file stream used for to write to temp file
+    std::ifstream frameFileIn;      // Input file stream used for printing temp file to terminal
+    bool f_setBorder = false;       // Tracks if a frame border has to be created 
+    std::atomic<bool> f_renderActive{false};    // Tracks if the frame printing is being done in a thread
+    char borderChar = '#';          // Character to be used to build the border
+    std::mutex renderMutex;         // Mutex to synchronise renderer thread with main thread
+    fps frameRate = 0;              // Set FPS
+    std::thread frameRenderThread;  // Thread used to print to terminal
+
+    // Get the frame size
+    s_size getTerminalSize(void);       
     s_size getBorderedFrameSize(void);  
+
+    // Write a border of the frame to the temp file
     void buildBorder(void);
+
+    // Write to temp file
     void writeToFile(const std::string& c, uint16_t pos);
     void writeToFile(const char c, uint16_t pos);
 
+    // For multi-threaded intialisation, adjusts the timing of the renderer thread
     void updateFPS(fps fps);
-
-
-    protected:
-    std::string filename = "temp";   
-    bool f_setBorder = false;       // Tracks if a frame border has to be created 
-    std::atomic<bool> f_renderActive{false};    // Tracks if the frame printing is being done in a thread 
-    char borderChar = '#'; 
-    std::mutex renderMutex;
-    fps frameRate = 0;
-    std::thread frameRenderThread;
     void frameRenderWorker(void);
     void printFrameWorker(void);
+
+    protected:
+    std::string filename = "temp";  // Temporary file name 
+
 };
 
 #endif

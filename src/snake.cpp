@@ -196,6 +196,10 @@ void snake::checkCollision(void){
     f_collisionOccurred = false;
 }
 
+snakeBodyElement::snakeBodyElement(s_pos position): pos(position){
+
+}
+
 snakeBodyElement::snakeBodyElement(s_pos position, char design): pos(position), design(design){
 
 }
