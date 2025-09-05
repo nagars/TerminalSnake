@@ -16,7 +16,6 @@ class snakeGame : public frame {
     private:
     snake sneakySnake;      // snake object
     s_pos foodPos;          // food position
-    uint16_t sleepTime;     // time between each game loop (ms)
 
     // Food
     bool foodConsumed();

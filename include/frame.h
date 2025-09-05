@@ -7,6 +7,7 @@
 #include <string.h>
 #include <mutex>
 #include <atomic>
+#include <unordered_map>
 #include "common.h"
 
 // Frame order
@@ -57,6 +58,10 @@ class frame{
     void lockFrameRenderer();
     void releaseFrameRenderer();
 
+    // Debug APIs
+    void addDebugInfo(const std::string& literal, uint16_t value);
+    void addDebugInfo(const std::string& literal, char value);
+
     // A class with a std::thread member cannot be copied
     frame(const frame&) = delete;
     frame& operator=(const frame&) = delete;
@@ -74,6 +79,7 @@ class frame{
     std::mutex renderMutex;         // Mutex to synchronise renderer thread with main thread
     fps frameRate = 0;              // Set FPS
     std::thread frameRenderThread;  // Thread used to print to terminal
+    std::unordered_map<std::string, uint16_t> debugInfoMap; // Stores the debug info to be printed
 
     // Get the frame size
     s_size getTerminalSize(void);       

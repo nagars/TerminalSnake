@@ -5,7 +5,7 @@
 #include <chrono>  // For std::chrono::seconds
 #include <cstdio>
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
     #define DEBUG_PRINT(...) printf(__VA_ARGS__)

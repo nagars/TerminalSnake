@@ -102,7 +102,7 @@ void snake::extendSnake(void){
 
 void snake::moveSnake(void){
 
-    DEBUG_PRINT("Snake size: %ld\n", body.size());
+//    DEBUG_PRINT("Snake size: %ld\n", body.size());
 
     // If no body exists. Else just move the head
     if(body.size() > 0){

@@ -169,8 +169,8 @@ void frame::frameRenderWorker(void){
     // Set the renderer active flag
     f_renderActive = true;
 
-    DEBUG_PRINT ("lines %d\n", termSize.rows);
-    DEBUG_PRINT ("columns %d\n", termSize.cols);
+    // DEBUG_PRINT ("lines %d\n", termSize.rows);
+    // DEBUG_PRINT ("columns %d\n", termSize.cols);
 
     while(1){
 
@@ -390,7 +390,7 @@ void frame::updateFrameRow(const std::string& c, uint16_t row){                 
         // Check size of the string
         if((uint16_t)c.length() != borderedFrameSize.cols){
             std::cerr << "String to be printed is not the same size as row" << std::endl;
-            DEBUG_PRINT("Size of string to print: %ld\n", c.length());
+            //DEBUG_PRINT("Size of string to print: %ld\n", c.length());
             return;
         }
 
@@ -411,7 +411,7 @@ void frame::updateFrameRow(const std::string& c, uint16_t row){                 
         // Check size of the string
         if((uint16_t)c.length() != termSize.cols){
             std::cerr << "String to be printed is not the same size as row" << std::endl;
-            DEBUG_PRINT("Size of string to print: %ld\n", c.length());
+            //DEBUG_PRINT("Size of string to print: %ld\n", c.length());
             return;
         }
 
@@ -442,6 +442,13 @@ void frame::printFrameWorker(void){
     // Print temp file to terminal
     frameFileIn.seekg(0, std::ios::beg); // Move the pointer to the beginning
     std::cout << frameFileIn.rdbuf(); // Copy the file's buffer directly to cout
+
+    // Print debug info if available
+    if(debugInfoMap.size() > 0){
+        for(const auto& info: debugInfoMap){
+            std::cout << "\r" << info.first << ": " << info.second << std::endl;
+        }
+    }
 }
 
 void frame::printFrame(void){  // Print frame to terminal
@@ -462,10 +469,10 @@ s_size frame::getTerminalSize(void){
     termSize.cols = w.ws_col;
     termSize.rows = w.ws_row;
 
-    #ifdef DEBUG
-    // Add space for debug data. Arbitrary rows reserved.
-    termSize.rows -= 2;
-    #endif
+    //#ifdef DEBUG
+    // Add space for debug data
+    termSize.rows -= debugInfoMap.size();
+    //#endif
 
     return termSize;
 }
@@ -505,5 +512,31 @@ bool frame::isWithinFrame(s_pos pos){
     }
     
     return true;
+}
+
+void frame::addDebugInfo(const std::string& literal, uint16_t value){
+
+    // If already mapped, update the value
+    if(debugInfoMap.count(literal) > 0){
+        debugInfoMap[literal] = value;
+        return;
+    }
+
+    // Append debug literal and value to the hash map
+    debugInfoMap.emplace(literal, value);
+
+}
+
+void frame::addDebugInfo(const std::string& literal, char value){
+
+    // If already mapped, update the value
+    if(debugInfoMap.count(literal) > 0){
+        debugInfoMap[literal] = value;
+        return;
+    }
+
+    // Append debug literal and value to the hash map
+    debugInfoMap.emplace(literal, value);
+
 }
 

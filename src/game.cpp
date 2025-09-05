@@ -10,9 +10,9 @@
 #define MIN_SIZE_ROW    15
 #define MIN_SIZE_COL    20
 
-#define SPEED_UP 10
+#define SPEED_UP 5
 
-snakeGame::snakeGame() : frame((fps)16){
+snakeGame::snakeGame() : frame((fps)10){
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
@@ -67,6 +67,13 @@ void snakeGame::run(){
     // Sleep delay
     uint16_t sleep_ms = 100; 
 
+    #ifdef DEBUG
+    addDebugInfo("Position X",pos.x);
+    addDebugInfo("Position Y",pos.y);
+    addDebugInfo("Command", (uint16_t)0);
+    #endif
+    addDebugInfo("Current Score", numFoodConsumed);
+
     while(1){
 
         // read command from terminal
@@ -106,12 +113,17 @@ void snakeGame::run(){
         // use command to set next position of snake and design
         updateSnake(cmd);
         
+        // Update debug info
         #ifdef DEBUG
         s_pos pos = sneakySnake.getHeadPos();
-        DEBUG_PRINT("\rPosition %d,%d\n",pos.x, pos.y);
-        DEBUG_PRINT("\rCommand Received: %c\n",cmd);
+        addDebugInfo("Position X",pos.x);
+        addDebugInfo("Position Y",pos.y);
+        addDebugInfo("Command", cmd);
         #endif
         
+        addDebugInfo("Current Score", numFoodConsumed);
+
+
         std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms)); // Pause for a short time
     }
 }
