@@ -9,7 +9,7 @@ class snakeGame : public frame {
     snakeGame();    // calls frame constructor in multi-threaded mode    
     
     void run();
-    // void pause();
+    void pauseGame();
     void endGame();
     // void reset();
 

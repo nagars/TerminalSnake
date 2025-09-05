@@ -11,6 +11,7 @@
 #define MIN_SIZE_COL    20
 
 #define SPEED_UP 5
+#define PAUSE_COMMAND   32
 
 snakeGame::snakeGame() : frame((fps)10){
 
@@ -79,6 +80,11 @@ void snakeGame::run(){
         // read command from terminal
         read(STDIN_FILENO, &cmd, 1);
 
+        if(cmd == PAUSE_COMMAND){
+            pauseGame();
+            cmd = 0;        // reset the command
+        }
+
         // Check if food is consumed
         if(true == foodConsumed()){
             // If yes, place new food and extend the snake body
@@ -123,11 +129,20 @@ void snakeGame::run(){
         
         addDebugInfo("Current Score", numFoodConsumed);
 
-
         std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms)); // Pause for a short time
     }
 }
     
+void snakeGame::pauseGame(void){
+
+    char cmd;
+    while(cmd != PAUSE_COMMAND){
+        read(STDIN_FILENO, &cmd, 1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Pause for a short time
+    }
+
+}
+
 void snakeGame::updateFrameLayout(void){
     
     s_pos pos;
