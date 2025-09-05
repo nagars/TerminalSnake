@@ -12,7 +12,7 @@
 
 #define SPEED_UP 10
 
-snakeGame::snakeGame() : frame((fps)10){
+snakeGame::snakeGame() : frame((fps)16){
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
@@ -121,7 +121,7 @@ void snakeGame::updateFrameLayout(void){
     s_pos pos;
 
     lockFrameRenderer();
-
+    
     // Update the frame with new positions    
     updateFrameElement(SNAKE_FOOD, foodPos.y, foodPos.x);
 

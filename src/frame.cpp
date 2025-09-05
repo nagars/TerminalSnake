@@ -27,7 +27,11 @@ frame::frame(void){
     }
     
     std::cout << '\r' << std::endl;
-    clearFrame();
+
+    // Set the frame render lock flag to true
+    f_renderLockAcquired = true;
+
+    clearFrameWorker();
 }
 
 frame::frame(char border):borderChar(border){
@@ -52,14 +56,17 @@ frame::frame(char border):borderChar(border){
     // Set the border flag to true
     f_setBorder = true;
     //borderChar = border;
+    
+    // Set the frame render lock flag to true
+    f_renderLockAcquired = true;
 
     // Set the frame size variable
     getBorderedFrameSize();
     
-    clearFrame();
+    clearFrameWorker();
 }
 
-frame::frame(fps fps):frameRate(fps){
+frame::frame(fps fps){
 
      // Get the terminal size and build the frame limits
     // set termSize variable
@@ -79,7 +86,10 @@ frame::frame(fps fps):frameRate(fps){
     }
     
     std::cout << '\r' << std::endl;
-    clearFrame();
+    clearFrameWorker();
+
+    // Set class fps variable
+    updateFPS(fps);
 
     // Initialise the mutex. Do not lock
     std::unique_lock<std::mutex> lock(renderMutex, std::defer_lock);
@@ -89,7 +99,7 @@ frame::frame(fps fps):frameRate(fps){
     
 }
 
-frame::frame(fps fps, char border):borderChar(border),frameRate(fps){
+frame::frame(fps fps, char border):borderChar(border){
 
     // Get the terminal size and build the frame limits
     // set termSize variable
@@ -115,7 +125,10 @@ frame::frame(fps fps, char border):borderChar(border),frameRate(fps){
     // Set the frame size variable
     getBorderedFrameSize();
     
-    clearFrame();
+    clearFrameWorker();
+
+    // Set class fps variable
+    updateFPS(fps);
 
     // Initialise the mutex. Do not lock
     std::unique_lock<std::mutex> lock(renderMutex, std::defer_lock);
@@ -165,7 +178,6 @@ void frame::frameRenderWorker(void){
         if(f_renderActive == false){
             return;
         }
-
         renderMutex.lock(); 
         printFrameWorker();
         renderMutex.unlock();
@@ -174,7 +186,7 @@ void frame::frameRenderWorker(void){
     }
 }
 
-void frame::clearFrame(void){
+void frame::clearFrameWorker(void){
 
     // Update terminal size
     termSize = getTerminalSize();  
@@ -189,9 +201,23 @@ void frame::clearFrame(void){
         blankRow[blankRow.size() - 1] = '\n';
         // Fill the file with the current empty frame
         for(uint16_t n = 1; n < termSize.rows; n++){
-            updateFrameRow(blankRow, n);
+            writeToFile(blankRow, n*borderedFrameSize.cols);
         }
     }
+
+}
+
+void frame::clearFrame(void){
+
+    // Check if the render mutex is acquired
+    if(f_renderLockAcquired == true){
+        std::cerr << "Frame render lock acquired elsewhere. Did you call releaseFrameRenderer()?" << std::endl;
+        return;
+    }
+
+    renderMutex.lock();
+    clearFrameWorker();
+    renderMutex.unlock();
 
 }
 
@@ -269,21 +295,29 @@ s_size frame::getBorderedFrameSize(void){
 void frame::lockFrameRenderer(){
 
     renderMutex.lock();
+    f_renderLockAcquired = true;
 }
 
 void frame::releaseFrameRenderer(){
 
     renderMutex.unlock();
+    f_renderLockAcquired = false;
 }
 
 void frame::updateFPS(fps fps){
 
-    if(fps > 0){
+    if((fps > 0)&&(fps < 500)){
         frameRate = fps;
     }
 }
 
 void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update the frame in temp file
+
+    // Check if the render mutex is acquired
+    if(f_renderLockAcquired == false){
+        std::cerr << "Frame render lock missing. Did you call LockFrameRenderer()?" << std::endl;
+        return;
+    }
 
     if(f_setBorder == true){
 
@@ -335,6 +369,12 @@ void frame::updateFrameElement(char c, uint16_t row, uint16_t col){  // Update t
 
 
 void frame::updateFrameRow(const std::string& c, uint16_t row){                  // Update the frame in temp file
+
+    // Check if the render mutex is acquired
+    if(f_renderLockAcquired == false){
+        std::cerr << "Frame render lock missing. Did you call LockFrameRenderer()?" << std::endl;
+        return;
+    }
 
     if(f_setBorder == true){
 

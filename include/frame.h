@@ -67,7 +67,9 @@ class frame{
     std::ofstream frameFileOut;     // Output file stream used for to write to temp file
     std::ifstream frameFileIn;      // Input file stream used for printing temp file to terminal
     bool f_setBorder = false;       // Tracks if a frame border has to be created 
-    std::atomic<bool> f_renderActive{false};    // Tracks if the frame printing is being done in a thread
+    std::atomic<bool> f_renderActive{false};    // Tracks if the frame printing is being 
+                                                // done in a separate thread
+    bool f_renderLockAcquired = false;  // Tracks if the render mutex is locked
     char borderChar = '#';          // Character to be used to build the border
     std::mutex renderMutex;         // Mutex to synchronise renderer thread with main thread
     fps frameRate = 0;              // Set FPS
@@ -88,6 +90,7 @@ class frame{
     void updateFPS(fps fps);
     void frameRenderWorker(void);
     void printFrameWorker(void);
+    void clearFrameWorker(void);
 
     protected:
     std::string filename = "temp";  // Temporary file name 
