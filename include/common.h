@@ -15,8 +15,8 @@
 
 // Sets the position in the frame matrix
 typedef struct {
-    uint16_t x;         // X axis (Cols)
-    uint16_t y;         // Y axis (rows)
+    int16_t x;         // X axis (Cols)
+    int16_t y;         // Y axis (rows)
 }s_pos;
 
 

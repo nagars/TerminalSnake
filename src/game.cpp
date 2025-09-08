@@ -33,7 +33,7 @@ tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 void snakeGame::run(){
 
     // Main loop
-    enableBorder();
+    //enableBorder();
 
     // Get the size of the terminal
     s_size termSize = getFrameSize();
@@ -54,7 +54,7 @@ void snakeGame::run(){
     pos.y = termSize.rows/2;
     pos.x = termSize.cols/2;
     sneakySnake.setHeadPos(pos);
-    sneakySnake.setDirection(DIR_NORTH);
+    sneakySnake.setDirection(DIR_SOUTH);
 
     // Start by placing food
     placeFood();
@@ -73,7 +73,7 @@ void snakeGame::run(){
     addDebugInfo("Position Y",pos.y);
     addDebugInfo("Command", (uint16_t)0);
     #endif
-    addDebugInfo("Current Score", numFoodConsumed);
+    addDebugInfo("Current Score", (int16_t)numFoodConsumed);
 
     while(1){
 
@@ -83,6 +83,7 @@ void snakeGame::run(){
         if(cmd == PAUSE_COMMAND){
             pauseGame();
             cmd = 0;        // reset the command
+            disableBorder();
         }
 
         // Check if food is consumed
@@ -99,13 +100,13 @@ void snakeGame::run(){
 
         // Check if a collision occurred
         if(true == checkCollision()){
-            endGame();
+            //endGame();
             return;
         }
 
         // Check border collision
         if(true == checkBorderCollision()){
-            endGame();
+            //endGame();
             return;
         }
 
@@ -126,8 +127,7 @@ void snakeGame::run(){
         addDebugInfo("Position Y",pos.y);
         addDebugInfo("Command", cmd);
         #endif
-        
-        addDebugInfo("Current Score", numFoodConsumed);
+        addDebugInfo("Current Score", (int16_t)numFoodConsumed);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms)); // Pause for a short time
     }
@@ -198,11 +198,11 @@ void snakeGame::placeFood(void){
     std::mt19937 gen(rd()); // Seed the generator
 
     // For columns
-    std::uniform_int_distribution<> distrib0(FRAME_OFFSET, frameLimit.cols - 1); // Define the distribution
+    std::uniform_int_distribution<> distrib0(FRAME_OFFSET + 1, frameLimit.cols - 1); // Define the distribution
     foodPos.x = distrib0(gen); // Generate the random number
 
     // For rows
-    std::uniform_int_distribution<> distrib1(FRAME_OFFSET, frameLimit.rows - 1); // Define the distribution
+    std::uniform_int_distribution<> distrib1(FRAME_OFFSET + 1, frameLimit.rows - 1); // Define the distribution
     foodPos.y = distrib1(gen); // Generate the random number
 }
 

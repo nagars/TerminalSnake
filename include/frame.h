@@ -39,8 +39,8 @@ class frame{
     ~frame();
 
     // Update temporary file containg the frame
-    void updateFrameElement(char c, uint16_t row, uint16_t col); 
-    void updateFrameRow(const std::string& c, uint16_t row);   
+    void updateFrameElement(char c, int16_t row, int16_t col); 
+    void updateFrameRow(const std::string& c, int16_t row);   
     void clearFrame(void);              
 
     // Write to terminal
@@ -59,7 +59,7 @@ class frame{
     void releaseFrameRenderer();
 
     // Debug APIs
-    void addDebugInfo(const std::string& literal, uint16_t value);
+    void addDebugInfo(const std::string& literal, int16_t value);
     void addDebugInfo(const std::string& literal, char value);
 
     // A class with a std::thread member cannot be copied
@@ -67,8 +67,8 @@ class frame{
     frame& operator=(const frame&) = delete;
 
     private:
-    s_size termSize;                // size of terminal to be written to 
-    s_size borderedFrameSize;       // size of the frame when initialised with a border
+    //s_size termSize;                // size of terminal to be written to 
+    //s_size borderedFrameSize;       // size of the frame when initialised with a border
     std::ofstream frameFileOut;     // Output file stream used for to write to temp file
     std::ifstream frameFileIn;      // Input file stream used for printing temp file to terminal
     bool f_setBorder = false;       // Tracks if a frame border has to be created 
@@ -79,7 +79,7 @@ class frame{
     std::mutex renderMutex;         // Mutex to synchronise renderer thread with main thread
     fps frameRate = 0;              // Set FPS
     std::thread frameRenderThread;  // Thread used to print to terminal
-    std::unordered_map<std::string, uint16_t> debugInfoMap; // Stores the debug info to be printed
+    std::unordered_map<std::string, int16_t> debugInfoMap; // Stores the debug info to be printed
 
     // Get the frame size
     s_size getTerminalSize(void);       
