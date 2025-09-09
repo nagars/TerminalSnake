@@ -33,7 +33,7 @@ tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 void snakeGame::run(){
 
     // Main loop
-    //enableBorder();
+    enableBorder();
 
     // Get the size of the terminal
     s_size termSize = getFrameSize();
@@ -71,7 +71,7 @@ void snakeGame::run(){
     #ifdef DEBUG
     addDebugInfo("Position X",pos.x);
     addDebugInfo("Position Y",pos.y);
-    addDebugInfo("Command", (uint16_t)0);
+    addDebugInfo("Command", (int16_t)0);
     #endif
     addDebugInfo("Current Score", (int16_t)numFoodConsumed);
 
@@ -83,7 +83,6 @@ void snakeGame::run(){
         if(cmd == PAUSE_COMMAND){
             pauseGame();
             cmd = 0;        // reset the command
-            disableBorder();
         }
 
         // Check if food is consumed

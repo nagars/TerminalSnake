@@ -67,8 +67,6 @@ class frame{
     frame& operator=(const frame&) = delete;
 
     private:
-    //s_size termSize;                // size of terminal to be written to 
-    //s_size borderedFrameSize;       // size of the frame when initialised with a border
     std::ofstream frameFileOut;     // Output file stream used for to write to temp file
     std::ifstream frameFileIn;      // Input file stream used for printing temp file to terminal
     bool f_setBorder = false;       // Tracks if a frame border has to be created 

@@ -9,10 +9,6 @@
 
 frame::frame(void){
 
-    // Get the terminal size and build the frame limits
-    // set termSize variable
-    //termSize = getTerminalSize();
-
     // Create a text file with the current empty frame
     try{
         frameFileOut.open(filename);
@@ -36,10 +32,6 @@ frame::frame(void){
 
 frame::frame(char border):borderChar(border){
 
-    // Get the terminal size and build the frame limits
-    // set termSize variable
-    //termSize = getTerminalSize();
-
     // Create a text file with the current empty frame
     try{
         frameFileOut.open(filename);
@@ -55,22 +47,14 @@ frame::frame(char border):borderChar(border){
 
     // Set the border flag to true
     f_setBorder = true;
-    //borderChar = border;
     
     // Set the frame render lock flag to true
     f_renderLockAcquired = true;
 
-    // Set the frame size variable
-    //getBorderedFrameSize();
-    
     clearFrameWorker();
 }
 
 frame::frame(fps fps){
-
-     // Get the terminal size and build the frame limits
-    // set termSize variable
-    //termSize = getTerminalSize();
 
     // Create a text file with the current empty frame
     try{
@@ -101,10 +85,6 @@ frame::frame(fps fps){
 
 frame::frame(fps fps, char border):borderChar(border){
 
-    // Get the terminal size and build the frame limits
-    // set termSize variable
-    //termSize = getTerminalSize();
-
     // Create a text file with the current empty frame
     try{
         frameFileOut.open(filename);
@@ -120,7 +100,6 @@ frame::frame(fps fps, char border):borderChar(border){
 
     // Set the border flag to true
     f_setBorder = true;
-    //borderChar = border;
 
     // Set the frame size variable
     getBorderedFrameSize();
@@ -189,6 +168,7 @@ void frame::frameRenderWorker(void){
 void frame::clearFrameWorker(void){
 
     renderMutex.lock();
+
     
     // Clear the terminal and create the border
     if(f_setBorder == true){
@@ -209,7 +189,6 @@ void frame::clearFrameWorker(void){
     }
 
     renderMutex.unlock();
-
 }
 
 void frame::clearFrame(void){
@@ -289,8 +268,12 @@ s_size frame::getBorderedFrameSize(void){
     s_size borderedFrameSize;
 
     // Set the frame size variable
-    borderedFrameSize.cols = termSize.cols - FRAME_BUFFER - 2*FRAME_BORDER_WIDTH - 1;    // 1 space, 2 border, 1 '\n'
-    borderedFrameSize.rows = termSize.rows - 2*FRAME_BORDER_WIDTH + FRAME_BUFFER;    // 1 space, 2 border
+    borderedFrameSize.cols = termSize.cols 
+                                - FRAME_BUFFER 
+                                - 2*FRAME_BORDER_WIDTH - 1;    // 1 space, 2 border, 1 '\n'
+
+    borderedFrameSize.rows = termSize.rows - 
+                                2*FRAME_BORDER_WIDTH + FRAME_BUFFER;    // 1 space, 2 border
 
     return borderedFrameSize;
 }
@@ -311,6 +294,8 @@ void frame::updateFPS(fps fps){
 
     if((fps > 0)&&(fps < 500)){
         frameRate = fps;
+    }else{
+        std::cerr << "Invalid FPS provided" << std::endl;
     }
 }
 
@@ -340,7 +325,6 @@ void frame::updateFrameElement(char c, int16_t row, int16_t col){  // Update the
         // Update the character in the temp frame file at the provided position
         writeToFile(c, row*(FRAME_OFFSET + frameSize.cols + FRAME_OFFSET) + FRAME_OFFSET + col);
     
-
     }else{ 
 
         // Check if row is valid
@@ -383,7 +367,6 @@ void frame::updateFrameRow(const std::string& c, int16_t row){                  
         // Check size of the string
         if((uint16_t)c.length() != frameSize.cols){
             std::cerr << "String to be printed is not the same size as row" << std::endl;
-            //DEBUG_PRINT("Size of string to print: %ld\n", c.length());
             return;
         }
 
@@ -401,7 +384,6 @@ void frame::updateFrameRow(const std::string& c, int16_t row){                  
         // Check size of the string
         if((uint16_t)c.length() != frameSize.cols){
             std::cerr << "String to be printed is not the same size as row" << std::endl;
-            //DEBUG_PRINT("Size of string to print: %ld\n", c.length());
             return;
         }
 
@@ -444,26 +426,24 @@ void frame::printFrameWorker(void){
 void frame::printFrame(void){  // Print frame to terminal
 
     if(f_renderActive == true){
-        printf("Frame initialised to print via internal thread.\n");
+        std::cout << "Frame initialised to print via internal thread" << std::endl;
         return;
-    }else{
-        printFrameWorker();
     }
+    
+    printFrameWorker();
 }
 
 s_size frame::getTerminalSize(void){
-    
+
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     s_size termSize;
 
-    termSize.cols = w.ws_col;
-    termSize.rows = w.ws_row;
+    termSize.cols = w.ws_col + 1;
+    termSize.rows = w.ws_row - static_cast<uint16_t>(debugInfoMap.size());
 
-    //#ifdef DEBUG
     // Add space for debug data
-    termSize.rows -= debugInfoMap.size();
-    //#endif
+    //termSize.rows -= static_cast<uint16_t>(debugInfoMap.size());
 
     return termSize;
 }
