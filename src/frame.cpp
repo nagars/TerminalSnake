@@ -3,73 +3,44 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <iostream>
+#include <algorithm> // for copy
+#include <iterator> // for ostream_iterator
 #include <cstdio> 
 #include <thread>
 #include "frame.h"
 
 frame::frame(void){
 
-    // Create a text file with the current empty frame
-    try{
-        frameFileOut.open(filename);
-        frameFileIn.open(filename);
-
-        // Check if the file was created / opened
-        if ((!frameFileOut.is_open()) || (!frameFileIn.is_open())) {
-            throw(std::runtime_error("Unable to open file!"));
-        }
-    }catch(const std::runtime_error& e){
-        std::cerr << "Runtime error caught: " << e.what() << std::endl;
-    }
+    // Create the matrix used for printing
+    resizeDisplayMatrix();
     
-    std::cout << '\r' << std::endl;
+    // std::cout << '\r' << std::endl;
 
     // Set the frame render lock flag to true
-    f_renderLockAcquired = true;
+    //f_renderLockAcquired = true;
 
     clearFrameWorker();
 }
 
 frame::frame(char border):borderChar(border){
 
-    // Create a text file with the current empty frame
-    try{
-        frameFileOut.open(filename);
-        frameFileIn.open(filename);
-
-        // Check if the file was created / opened
-        if ((!frameFileOut.is_open()) || (!frameFileIn.is_open())) {
-            throw(std::runtime_error("Unable to open file!"));
-        }
-    }catch(const std::runtime_error& e){
-        std::cerr << "Runtime error caught: " << e.what() << std::endl;
-    }
+    // Create the matrix used for printing
+    resizeDisplayMatrix();
 
     // Set the border flag to true
     f_setBorder = true;
     
     // Set the frame render lock flag to true
-    f_renderLockAcquired = true;
+    //f_renderLockAcquired = true;
 
     clearFrameWorker();
 }
 
 frame::frame(fps fps){
 
-    // Create a text file with the current empty frame
-    try{
-        frameFileOut.open(filename);
-        frameFileIn.open(filename);
-
-        // Check if the file was created / opened
-        if ((!frameFileOut.is_open()) || (!frameFileIn.is_open())) {
-            throw(std::runtime_error("Unable to open file!"));
-        }
-    }catch(const std::runtime_error& e){
-        std::cerr << "Runtime error caught: " << e.what() << std::endl;
-    }
+    // Create the matrix used for printing
+    resizeDisplayMatrix();
     
-    std::cout << '\r' << std::endl;
     clearFrameWorker();
 
     // Set class fps variable
@@ -85,18 +56,8 @@ frame::frame(fps fps){
 
 frame::frame(fps fps, char border):borderChar(border){
 
-    // Create a text file with the current empty frame
-    try{
-        frameFileOut.open(filename);
-        frameFileIn.open(filename);
-
-        // Check if the file was created / opened
-        if ((!frameFileOut.is_open()) || (!frameFileIn.is_open())) {
-            throw(std::runtime_error("Unable to open file!"));
-        }
-    }catch(const std::runtime_error& e){
-        std::cerr << "Runtime error caught: " << e.what() << std::endl;
-    }
+    // Create the matrix used for printing
+    resizeDisplayMatrix();
 
     // Set the border flag to true
     f_setBorder = true;
@@ -118,10 +79,6 @@ frame::frame(fps fps, char border):borderChar(border){
 
 frame::~frame(void){
 
-    // Close pointer to temp file
-    frameFileOut.close();
-    frameFileIn.close();
-
     // Close thread
     if(f_renderActive == true){
         if(frameRenderThread.joinable() == true){
@@ -131,25 +88,31 @@ frame::~frame(void){
         }
     }
 
-    // delete file
-    try {
-        int result = remove(const_cast<char*>(filename.c_str()));
-        if (result != 0) {
-            // If remove() returns non-zero, throw an exception
-            throw std::runtime_error("Failed to delete file."); 
+}
+
+s_size frame::resizeDisplayMatrix(void){
+
+    static s_size prevTermSize; 
+    s_size termSize = getTerminalSize();
+
+    if((termSize.rows != prevTermSize.rows) || (termSize.cols != prevTermSize.cols)){
+    //std::cout << "Cols , Rows : " << termSize.cols << "," << termSize.rows << std::endl;
+
+        displayMatrix.resize(termSize.rows);
+        for(auto &row : displayMatrix){
+            row.resize(termSize.cols);
+            row.assign(termSize.cols,' ');
         }
-    } catch (const std::runtime_error& e) {
-        std::cerr << "Runtime error caught: " << e.what() << std::endl; 
     }
 
+    prevTermSize = termSize;
+
+    return termSize;
 }
 
 void frame::frameRenderWorker(void){
     // Set the renderer active flag
     f_renderActive = true;
-
-    // DEBUG_PRINT ("lines %d\n", termSize.rows);
-    // DEBUG_PRINT ("columns %d\n", termSize.cols);
 
     while(1){
 
@@ -167,67 +130,59 @@ void frame::frameRenderWorker(void){
 
 void frame::clearFrameWorker(void){
 
-    renderMutex.lock();
+    // Resize display matrix in case the 
+    // terminal size changes
+    resizeDisplayMatrix();
 
-    
-    // Clear the terminal and create the border
-    if(f_setBorder == true){
-        buildBorder();
-
-    }else{
-        
-        // Update terminal size
-        s_size termSize = getTerminalSize();  
-
-        // Create a string for an empty row of the frame
-        std::string blankRow(termSize.cols, ' ');
-        blankRow[blankRow.size() - 1] = '\n';
-        // Fill the file with the current empty frame
-        for(uint16_t n = 1; n < termSize.rows; n++){
-            writeToFile(blankRow, n*termSize.cols);
-        }
+    // Clear all rows
+    for(auto &row: displayMatrix){
+        row.assign(row.size(),' ');
     }
 
-    renderMutex.unlock();
+    // If a border is required
+    if(f_setBorder == true){
+
+        for(auto &row: displayMatrix){
+            row[0] = borderChar;
+            row[row.size() - 1] = borderChar;
+        }
+        
+        displayMatrix[0].assign(displayMatrix[0].size(), borderChar);
+        displayMatrix[displayMatrix.size() - 1].assign(displayMatrix[0].size(), borderChar);
+    }
+
+    // s_size termSize = getTerminalSize();
+    // for(auto row: displayMatrix){
+    //     row.assign(termSize.cols,' ');
+    // }
+
+    // Clear the terminal and create the border
+    // if(f_setBorder == true){
+    //     for(auto row: displayMatrix){
+    //         row[0] = borderChar;
+    //         row[termSize.cols - 1] = borderChar;
+    //     }
+    //     displayMatrix[0].assign(termSize.cols, borderChar);
+    //     displayMatrix[termSize.cols - 1].assign(termSize.cols, borderChar);
+    // }
 }
 
 void frame::clearFrame(void){
 
     // Check if the render mutex is acquired
-    if(f_renderLockAcquired == true){
-        std::cerr << "Frame render lock acquired elsewhere. Did you call releaseFrameRenderer()?" << std::endl;
-        return;
+    if(f_renderActive == true){
+        if(f_renderLockAcquired == true){
+            std::cerr << "Frame render lock acquired elsewhere. Did you call releaseFrameRenderer()?" << std::endl;
+            return;
+        }
+
+        renderMutex.lock();
+        clearFrameWorker();
+        renderMutex.unlock();
+        
+    }else{
+        clearFrameWorker();
     }
-
-    clearFrameWorker();
-}
-
-void frame::buildBorder(void){
-
-    // Update terminal size
-    s_size termSize = getTerminalSize();  
-
-    //Create a string for an empty row of the frame
-    std::string blankRow(termSize.cols, ' ');
-    // Set the border character at the start and end
-    blankRow[1] = borderChar;
-    blankRow[blankRow.size() - 2] = borderChar;
-    blankRow[blankRow.size() - 1] = '\n';
-    // Fill the second row from the beginning and end
-    // with the current empty frame
-    for(uint16_t n = 1; n < termSize.rows - 1; n++){
-        // Update entire row
-        writeToFile(blankRow, n * termSize.cols);
-    }
-
-    // Fill the blankRow with the border character
-    blankRow.assign(blankRow.size(),borderChar);
-    blankRow[0] = ' ';
-    blankRow[blankRow.size() - 1] = '\n';
-
-    // Fill the first and last row of the frame
-    writeToFile(blankRow, termSize.cols*(termSize.rows - 1));
-    writeToFile(blankRow, termSize.cols);
 }
 
 void frame::enableBorder(char border){
@@ -265,20 +220,16 @@ s_size frame::getBorderedFrameSize(void){
 
     // Update terminal size
     s_size termSize = getTerminalSize();  
-    s_size borderedFrameSize;
-
-    // Set the frame size variable
-    borderedFrameSize.cols = termSize.cols 
-                                - FRAME_BUFFER 
-                                - 2*FRAME_BORDER_WIDTH - 1;    // 1 space, 2 border, 1 '\n'
-
-    borderedFrameSize.rows = termSize.rows - 
-                                2*FRAME_BORDER_WIDTH + FRAME_BUFFER;    // 1 space, 2 border
-
-    return borderedFrameSize;
+    termSize.cols -= 2;
+    termSize.rows -= 2;
+    return termSize;
 }
 
 void frame::lockFrameRenderer(){
+
+    if(f_renderActive == false){
+        return;
+    }
 
     renderMutex.lock();
     f_renderLockAcquired = true;
@@ -286,11 +237,19 @@ void frame::lockFrameRenderer(){
 
 void frame::releaseFrameRenderer(){
 
+    if(f_renderActive == false){
+        return;
+    }
+
     renderMutex.unlock();
     f_renderLockAcquired = false;
 }
 
 void frame::updateFPS(fps fps){
+
+    if(f_renderActive == false){
+        return;
+    }
 
     if((fps > 0)&&(fps < 500)){
         frameRate = fps;
@@ -300,9 +259,9 @@ void frame::updateFPS(fps fps){
 }
 
 void frame::updateFrameElement(char c, int16_t row, int16_t col){  // Update the frame in temp file
-
+ 
     // Check if the render mutex is acquired
-    if(f_renderLockAcquired == false){
+    if(f_renderActive == true && f_renderLockAcquired == false){
         std::cerr << "Frame render lock missing. Did you call LockFrameRenderer()?" << std::endl;
         return;
     }
@@ -317,39 +276,43 @@ void frame::updateFrameElement(char c, int16_t row, int16_t col){  // Update the
         }   
 
         // Check if column is valid
-        if((col < -1) || (col > frameSize.cols)){
+        if((col < 1) || (col > frameSize.cols)){
             std::cerr << "Requested column violates frame border" << std::endl;
             return;
         }
        
-        // Update the character in the temp frame file at the provided position
-        writeToFile(c, row*(FRAME_OFFSET + frameSize.cols + FRAME_OFFSET) + FRAME_OFFSET + col);
-    
     }else{ 
 
         // Check if row is valid
-        if((row < 1) || (row > frameSize.rows)){
+        if((row < 0) || (row > frameSize.rows - 1)){
             std::cerr << "Requested row violates frame border" << std::endl;
             return;
         }   
 
         // Check if column is valid
-        if((col < 1) || (col > frameSize.cols - 1)){
+        if((col < 0) || (col > frameSize.cols - 1)){
             std::cerr << "Requested column violates frame border" << std::endl;
             return;
         }
-
-        // Update the character in the temp frame file at the provided position
-        writeToFile(c, row*frameSize.cols + col);
     }
 
+
+    // Update the character in the temp frame file at the provided position
+    // try{
+        displayMatrix[row].at(col) = c;
+    
+    // }catch(const std::out_of_range& e){
+    //     std::cerr << "Exception caught in file: " << __FILE__ 
+    //              << ", line: " << __LINE__ 
+    //              << ". Error: " << e.what() << std::endl;
+    // }
 }
 
 
 void frame::updateFrameRow(const std::string& c, int16_t row){                  // Update the frame in temp file
 
     // Check if the render mutex is acquired
-    if(f_renderLockAcquired == false){
+    if(f_renderActive == true && f_renderLockAcquired == false){
         std::cerr << "Frame render lock missing. Did you call LockFrameRenderer()?" << std::endl;
         return;
     }
@@ -359,50 +322,31 @@ void frame::updateFrameRow(const std::string& c, int16_t row){                  
     if(f_setBorder == true){
         
         // Check if row is valid
-        if((row < 1) || (row > frameSize.rows)){
+        if((row < 1) || (row > frameSize.rows - 1)){
             std::cerr << "Requested row exceeds terminal size" << std::endl;
             return;
         }
-
-        // Check size of the string
-        if((uint16_t)c.length() != frameSize.cols){
-            std::cerr << "String to be printed is not the same size as row" << std::endl;
-            return;
-        }
-
-        // Update entire row
-        writeToFile(c, row * frameSize.cols);
 
     }else{
 
         // Check if row is valid
-        if((row < 1) || (row > frameSize.rows)){
+        if((row < 0) || (row > frameSize.rows)){
             std::cerr << "Requested row exceeds terminal size" << std::endl;
             return;
         }
 
-        // Check size of the string
-        if((uint16_t)c.length() != frameSize.cols){
-            std::cerr << "String to be printed is not the same size as row" << std::endl;
-            return;
-        }
-
-        // Update entire row
-        writeToFile(c, row * frameSize.cols);
     }
 
-}
+    // Check size of the string
+    if((uint16_t)c.length() != frameSize.cols){
+        std::cerr << "String to be printed is not the same size as row" << std::endl;
+        return;
+    }
 
-void frame::writeToFile(const std::string& c, uint16_t pos){
-        
-    frameFileOut.seekp(pos, std::ios_base::beg);
-    frameFileOut << c << std::flush;
-}
-
-void frame::writeToFile(const char c, uint16_t pos){
-
-    frameFileOut.seekp(pos, std::ios_base::beg);
-    frameFileOut << c << std::flush;
+    // Update entire row
+    for(uint16_t n = 0; n < c.length(); n++){
+        displayMatrix[row].at(n) = c[n];
+    }
 }
 
 void frame::printFrameWorker(void){
@@ -411,9 +355,11 @@ void frame::printFrameWorker(void){
     std::cout << "\x1b[2J\x1b[H" << std::flush; 
     std::cout << "\033[1m"; 
 
-    // Print temp file to terminal
-    frameFileIn.seekg(0, std::ios::beg); // Move the pointer to the beginning
-    std::cout << frameFileIn.rdbuf(); // Copy the file's buffer directly to cout
+    // Print matrix to terminal
+    for(auto row: displayMatrix){
+        std::copy(row.begin(), row.end(), std::ostream_iterator<char>(std::cout));
+        std::cout << std::endl;
+    }
 
     // Print debug info if available
     if(debugInfoMap.size() > 0){
@@ -439,11 +385,9 @@ s_size frame::getTerminalSize(void){
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
     s_size termSize;
 
-    termSize.cols = w.ws_col + 1;
-    termSize.rows = w.ws_row - static_cast<uint16_t>(debugInfoMap.size());
-
-    // Add space for debug data
-    //termSize.rows -= static_cast<uint16_t>(debugInfoMap.size());
+    termSize.cols = w.ws_col;
+    // Subtract the row required for debug information
+    termSize.rows = w.ws_row - 1 - static_cast<uint16_t>(debugInfoMap.size());
 
     return termSize;
 }
@@ -452,14 +396,27 @@ bool frame::isWithinFrame(s_pos pos){
   
     s_size frameSize = getFrameSize();
 
-    // Check if row is valid
-    if((pos.y < 1) || (pos.y > frameSize.rows)){
-        return false;
-    }   
+    if(f_setBorder == true){
+        // Check if row is valid
+        if((pos.y < 0) || (pos.y > frameSize.rows + 1)){
+            return false;
+        }   
 
-    // Check if column is valid
-    if((pos.x < 0) || (pos.x > frameSize.cols)){
-        return false;
+        // Check if column is valid
+        if((pos.x < 0) || (pos.x > frameSize.cols + 1)){
+            return false;
+        }
+
+    }else{
+        // Check if row is valid
+        if((pos.y < -1) || (pos.y > frameSize.rows)){
+            return false;
+        }   
+
+        // Check if column is valid
+        if((pos.x < 0) || (pos.x > frameSize.cols)){
+            return false;
+        }
     }
     
     return true;

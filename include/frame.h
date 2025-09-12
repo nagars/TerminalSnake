@@ -8,16 +8,12 @@
 #include <mutex>
 #include <atomic>
 #include <unordered_map>
+#include <vector>
 #include "common.h"
 
 // Frame order
 // 0,0 0,1 0,2
 // 1,0 1,1 1,2
-
-#define FRAME_BUFFER    1
-#define FRAME_BORDER_WIDTH  1
-
-#define FRAME_OFFSET FRAME_BUFFER + FRAME_BORDER_WIDTH
 
 // Tracks the size of the frame / terminal
 typedef struct {
@@ -67,8 +63,6 @@ class frame{
     frame& operator=(const frame&) = delete;
 
     private:
-    std::ofstream frameFileOut;     // Output file stream used for to write to temp file
-    std::ifstream frameFileIn;      // Input file stream used for printing temp file to terminal
     bool f_setBorder = false;       // Tracks if a frame border has to be created 
     std::atomic<bool> f_renderActive{false};    // Tracks if the frame printing is being 
                                                 // done in a separate thread
@@ -78,6 +72,7 @@ class frame{
     fps frameRate = 0;              // Set FPS
     std::thread frameRenderThread;  // Thread used to print to terminal
     std::unordered_map<std::string, int16_t> debugInfoMap; // Stores the debug info to be printed
+    std::vector<std::vector<char>> displayMatrix;
 
     // Get the frame size
     s_size getTerminalSize(void);       
@@ -95,6 +90,9 @@ class frame{
     void frameRenderWorker(void);
     void printFrameWorker(void);
     void clearFrameWorker(void);
+
+    s_size resizeDisplayMatrix(void);
+
 
     protected:
     std::string filename = "temp";  // Temporary file name 

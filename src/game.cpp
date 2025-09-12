@@ -13,7 +13,7 @@
 #define SPEED_UP 5
 #define PAUSE_COMMAND   32
 
-snakeGame::snakeGame() : frame((fps)10){
+snakeGame::snakeGame() : frame(){
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
@@ -33,7 +33,7 @@ tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 void snakeGame::run(){
 
     // Main loop
-    enableBorder();
+    //enableBorder();
 
     // Get the size of the terminal
     s_size termSize = getFrameSize();
@@ -109,11 +109,11 @@ void snakeGame::run(){
             return;
         }
 
-        clearFrame();
         updateFrameLayout();
 
         // Print frame to terminal
-        //printFrame();
+        printFrame();
+        clearFrame();
 
         // get latest command
         // use command to set next position of snake and design
@@ -197,11 +197,11 @@ void snakeGame::placeFood(void){
     std::mt19937 gen(rd()); // Seed the generator
 
     // For columns
-    std::uniform_int_distribution<> distrib0(FRAME_OFFSET + 1, frameLimit.cols - 1); // Define the distribution
+    std::uniform_int_distribution<> distrib0(1, frameLimit.cols - 1); // Define the distribution
     foodPos.x = distrib0(gen); // Generate the random number
 
     // For rows
-    std::uniform_int_distribution<> distrib1(FRAME_OFFSET + 1, frameLimit.rows - 1); // Define the distribution
+    std::uniform_int_distribution<> distrib1(1, frameLimit.rows - 1); // Define the distribution
     foodPos.y = distrib1(gen); // Generate the random number
 }
 

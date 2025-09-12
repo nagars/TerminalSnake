@@ -1,5 +1,5 @@
 # Compiler
-CXX = g++
+CXX = g++ -g
 # Compiler flags
 # -Iinclude: Tell the compiler to look for header files in the 'include' directory
 # -Wall: Enable all warnings
