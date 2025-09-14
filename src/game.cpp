@@ -29,11 +29,17 @@ tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 
 }
 
+snakeGame::~snakeGame(){
+
+    // Save highscore
+    saveHighScore(highScore);
+}
+
     
 void snakeGame::run(){
 
     // Main loop
-    //enableBorder();
+    enableBorder();
 
     // Get the size of the terminal
     s_size termSize = getFrameSize();
@@ -54,7 +60,7 @@ void snakeGame::run(){
     pos.y = termSize.rows/2;
     pos.x = termSize.cols/2;
     sneakySnake.setHeadPos(pos);
-    sneakySnake.setDirection(DIR_SOUTH);
+    sneakySnake.setDirection(DIR_NORTH);
 
     // Start by placing food
     placeFood();
@@ -63,10 +69,13 @@ void snakeGame::run(){
     char cmd;
 
     // total food consumed
-    uint16_t numFoodConsumed = 0;
+    numFoodConsumed = 0;
     
     // Sleep delay
     uint16_t sleep_ms = 100; 
+
+    // Current High Score
+    highScore = loadHighScore();
 
     #ifdef DEBUG
     addDebugInfo("Position X",pos.x);
@@ -74,6 +83,9 @@ void snakeGame::run(){
     addDebugInfo("Command", (int16_t)0);
     #endif
     addDebugInfo("Current Score", (int16_t)numFoodConsumed);
+    addDebugInfo("High Score", (int16_t)highScore);
+
+    //addDebugInfo("High Score", loadHighscore());
 
     while(1){
 
@@ -95,6 +107,11 @@ void snakeGame::run(){
             // Increase speed of snake after every 5 food consumed
             if(numFoodConsumed % 5 == 0)
                 sleep_ms -= SPEED_UP;
+            
+            // Update highscore
+            if(numFoodConsumed > highScore)
+                highScore = numFoodConsumed;
+
         }
 
         // Check if a collision occurred
@@ -127,6 +144,7 @@ void snakeGame::run(){
         addDebugInfo("Command", cmd);
         #endif
         addDebugInfo("Current Score", (int16_t)numFoodConsumed);
+        addDebugInfo("High Score", (int16_t)highScore);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms)); // Pause for a short time
     }
@@ -278,4 +296,73 @@ bool snakeGame::checkBorderCollision(){
     }
 
     return !isWithinFrame(snakePos);
+}
+
+uint16_t snakeGame::loadHighScore(void){
+
+    uint16_t highScore;
+    std::ifstream saveFile;
+
+    // Create a text file with the current empty frame
+    try{
+        saveFile.open("saveFile");
+
+        // Check if the file was created / opened
+        if (!saveFile.is_open()) {
+            throw(std::runtime_error("Unable to open file!"));
+        }
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    // Reset read and write pointers
+    saveFile.seekg(0);
+
+    char score;
+    // Get first char
+    saveFile >> score;
+    highScore = static_cast<uint16_t>(score);
+
+    if(saveFile.fail() == true){
+        // No integer. Assume this is the first attempt at reading
+        highScore = 0;
+    }
+
+    saveFile.close();
+    
+    return highScore;
+
+}
+
+void snakeGame::saveHighScore(uint16_t highScore){
+
+    std::ofstream saveFile;
+
+    // Create a text file with the current empty frame
+    try{
+        saveFile.open("saveFile");
+
+        // Check if the file was created / opened
+        if (!saveFile.is_open()) {
+            throw(std::runtime_error("Unable to open file!"));
+        }
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    saveFile.seekp(0);
+
+    saveFile << static_cast<char>(highScore);
+
+    try{
+        if(saveFile.fail() == true){
+            throw(std::runtime_error("Unable to save high score!"));
+        }
+    }
+    catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    saveFile.close();
+
 }
