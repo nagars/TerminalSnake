@@ -1,6 +1,6 @@
 // Main file. Entry of code. Instantiates game class that starts the game.
-#include "common.h"
-#include "game.h"
+#include "common/common.h"
+#include "snake/snakegame.h"
 
 int main (int argc, char **argv)
 {
