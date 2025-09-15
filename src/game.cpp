@@ -3,36 +3,40 @@
 #include "game.h"
 #include "common.h"
 #include <iostream>
-#include <unistd.h> // For read()
-#include <termios.h> // For termios functions
-#include <random> // For random number generation facilities
+#include <unistd.h> 
+#include <csignal>
+#include <termios.h>        // For termios functions
+#include <random>           // For random number generation facilities
+#include <SFML/Audio.hpp>   // For playing audio
 
 #define MIN_SIZE_ROW    15
 #define MIN_SIZE_COL    20
 
-#define SPEED_UP 5
+#define SPEED_UP        5
 #define PAUSE_COMMAND   32
 
-snakeGame::snakeGame() : frame(){
+// Tracks if a signal has been received to terminate
+bool sigCaught = false;
+
+snakeGame::snakeGame() : frame((fps)20){
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
-tcgetattr(STDIN_FILENO, &attr); // Get current terminal attributes
-attr.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echoing
+tcgetattr(STDIN_FILENO, &attr);     // Get current terminal attributes
+attr.c_lflag &= ~(ICANON | ECHO);   // Disable canonical mode and echoing
 attr.c_cc[VMIN] = 0;        // Read returns immediately (Polling / non-blocking)
 attr.c_cc[VTIME] = 0;       // Read has no timeout
 tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
 
-// Setup catching signals (SIGINT | SIGKILL | SIGTERM)
+// Signal handler lambda
+auto signalHandler = [](int signum) {
+   sigCaught = true;
+};
 
-// Setup catching signal (SIGWINCH)
+// Setup catching signals (SIGINT | SIGTERM)
+signal(SIGINT, signalHandler);
+signal(SIGTERM, signalHandler);
 
-}
-
-snakeGame::~snakeGame(){
-
-    // Save highscore
-    saveHighScore(highScore);
 }
 
     
@@ -55,15 +59,10 @@ void snakeGame::run(){
             return;
     }
 
-    // Set the position of the snake in the centre of the screen
-    s_pos pos;
-    pos.y = termSize.rows/2;
-    pos.x = termSize.cols/2;
-    sneakySnake.setHeadPos(pos);
-    sneakySnake.setDirection(DIR_NORTH);
-
-    // Start by placing food
-    placeFood();
+    // Initalise sound objects
+    sf::SoundBuffer soundBuffer;
+    soundBuffer.loadFromFile("audio/food.mp3");
+    sf::Sound sound(soundBuffer);
 
     // Store command from terminal
     char cmd;
@@ -77,6 +76,16 @@ void snakeGame::run(){
     // Current High Score
     highScore = loadHighScore();
 
+    // Set the position of the snake in the centre of the screen
+    s_pos pos;
+    pos.y = termSize.rows/2;
+    pos.x = termSize.cols/2;
+    sneakySnake.setHeadPos(pos);
+    sneakySnake.setDirection(DIR_NORTH);
+
+    // Start by placing food
+    placeFood();
+
     #ifdef DEBUG
     addDebugInfo("Position X",pos.x);
     addDebugInfo("Position Y",pos.y);
@@ -89,6 +98,12 @@ void snakeGame::run(){
 
     while(1){
 
+        // Check if terminate signal received
+        if(true == sigCaught){
+            endGame();
+            return;
+        }
+
         // read command from terminal
         read(STDIN_FILENO, &cmd, 1);
 
@@ -99,6 +114,10 @@ void snakeGame::run(){
 
         // Check if food is consumed
         if(true == foodConsumed()){
+            
+            // Play sound
+            sound.play();
+
             // If yes, place new food and extend the snake body
             sneakySnake.extendSnake();
             placeFood();
@@ -116,26 +135,24 @@ void snakeGame::run(){
 
         // Check if a collision occurred
         if(true == checkCollision()){
-            //endGame();
+            endGame();
             return;
         }
 
         // Check border collision
         if(true == checkBorderCollision()){
-            //endGame();
+            endGame();
             return;
         }
 
-        updateFrameLayout();
-
         // Print frame to terminal
-        printFrame();
         clearFrame();
+        updateFrameLayout();
 
         // get latest command
         // use command to set next position of snake and design
         updateSnake(cmd);
-        
+
         // Update debug info
         #ifdef DEBUG
         s_pos pos = sneakySnake.getHeadPos();
@@ -185,15 +202,17 @@ void snakeGame::updateFrameLayout(void){
 
 void snakeGame::endGame(){
 
-    // Flash snake
-    for(uint8_t n = 0; n < 5; n++){
-        clearFrame();
-        //printFrame();
-        std::this_thread::sleep_for(std::chrono::milliseconds(300)); // Pause for a short time
-        updateFrameLayout();
-        //printFrame();
-        std::this_thread::sleep_for(std::chrono::milliseconds(300)); // Pause for a short time
-    }
+    // Initalise sound objects
+    sf::SoundBuffer soundBuffer;
+    soundBuffer.loadFromFile("audio/gameover.mp3");
+    sf::Sound sound(soundBuffer);
+    sound.play();
+
+    // Delay to play sound
+    while(sound.getStatus() == sf::SoundSource::Status::Playing);
+
+    // Save highscore
+    saveHighScore(highScore);
 
 }
 
@@ -329,6 +348,14 @@ uint16_t snakeGame::loadHighScore(void){
     }
 
     saveFile.close();
+    try{
+        if(saveFile.fail() == true){
+            throw(std::runtime_error("Unable to close save file!"));
+        }
+    }
+    catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
     
     return highScore;
 
@@ -364,5 +391,13 @@ void snakeGame::saveHighScore(uint16_t highScore){
     }
 
     saveFile.close();
+    try{
+        if(saveFile.fail() == true){
+            throw(std::runtime_error("Unable to close save file!"));
+        }
+    }
+    catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
 
 }

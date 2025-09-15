@@ -7,12 +7,10 @@
 class snakeGame : public frame {
     public:
     snakeGame();    // calls frame constructor in multi-threaded mode   
-    ~snakeGame(); 
-    
+        
     void run();
     void pauseGame();
     void endGame();
-    // void reset();
 
     private:
     snake sneakySnake;      // snake object

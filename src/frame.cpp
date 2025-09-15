@@ -13,11 +13,6 @@ frame::frame(void){
 
     // Create the matrix used for printing
     resizeDisplayMatrix();
-    
-    // std::cout << '\r' << std::endl;
-
-    // Set the frame render lock flag to true
-    //f_renderLockAcquired = true;
 
     clearFrameWorker();
 }
@@ -30,9 +25,6 @@ frame::frame(char border):borderChar(border){
     // Set the border flag to true
     f_setBorder = true;
     
-    // Set the frame render lock flag to true
-    //f_renderLockAcquired = true;
-
     clearFrameWorker();
 }
 
@@ -41,6 +33,7 @@ frame::frame(fps fps){
     // Create the matrix used for printing
     resizeDisplayMatrix();
     
+    // Clear frame
     clearFrameWorker();
 
     // Set class fps variable
@@ -65,6 +58,7 @@ frame::frame(fps fps, char border):borderChar(border){
     // Set the frame size variable
     getBorderedFrameSize();
     
+    // Clear frame
     clearFrameWorker();
 
     // Set class fps variable
@@ -151,20 +145,6 @@ void frame::clearFrameWorker(void){
         displayMatrix[displayMatrix.size() - 1].assign(displayMatrix[0].size(), borderChar);
     }
 
-    // s_size termSize = getTerminalSize();
-    // for(auto row: displayMatrix){
-    //     row.assign(termSize.cols,' ');
-    // }
-
-    // Clear the terminal and create the border
-    // if(f_setBorder == true){
-    //     for(auto row: displayMatrix){
-    //         row[0] = borderChar;
-    //         row[termSize.cols - 1] = borderChar;
-    //     }
-    //     displayMatrix[0].assign(termSize.cols, borderChar);
-    //     displayMatrix[termSize.cols - 1].assign(termSize.cols, borderChar);
-    // }
 }
 
 void frame::clearFrame(void){
@@ -247,10 +227,6 @@ void frame::releaseFrameRenderer(){
 
 void frame::updateFPS(fps fps){
 
-    if(f_renderActive == false){
-        return;
-    }
-
     if((fps > 0)&&(fps < 500)){
         frameRate = fps;
     }else{
@@ -298,14 +274,13 @@ void frame::updateFrameElement(char c, int16_t row, int16_t col){  // Update the
 
 
     // Update the character in the temp frame file at the provided position
-    // try{
-        displayMatrix[row].at(col) = c;
-    
-    // }catch(const std::out_of_range& e){
-    //     std::cerr << "Exception caught in file: " << __FILE__ 
-    //              << ", line: " << __LINE__ 
-    //              << ". Error: " << e.what() << std::endl;
-    // }
+    try{
+        displayMatrix[row].at(col) = c;    
+    }catch(const std::out_of_range& e){
+        std::cerr << "Exception caught in file: " << __FILE__ 
+                 << ", line: " << __LINE__ 
+                 << ". Error: " << e.what() << std::endl;
+    }
 }
 
 

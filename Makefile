@@ -7,7 +7,7 @@ CXX = g++ -g
 CXXFLAGS = -Iinclude -Wall -std=c++11 
 
 # Define linker flags, including ncurses
-#LDFLAGS = -lncurses
+LDFLAGS = -lsfml-audio
 
 # The name of the executable
 TARGET = snake
