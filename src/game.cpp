@@ -1,0 +1,403 @@
+// Tracks state of game, instantiates other classes and handles printing to terminal
+
+#include "game.h"
+#include "common.h"
+#include <iostream>
+#include <unistd.h> 
+#include <csignal>
+#include <termios.h>        // For termios functions
+#include <random>           // For random number generation facilities
+#include <SFML/Audio.hpp>   // For playing audio
+
+#define MIN_SIZE_ROW    15
+#define MIN_SIZE_COL    20
+
+#define SPEED_UP        5
+#define PAUSE_COMMAND   32
+
+// Tracks if a signal has been received to terminate
+bool sigCaught = false;
+
+snakeGame::snakeGame() : frame((fps)20){
+
+// Change terminal settings to a non-blocking read
+struct termios attr;
+tcgetattr(STDIN_FILENO, &attr);     // Get current terminal attributes
+attr.c_lflag &= ~(ICANON | ECHO);   // Disable canonical mode and echoing
+attr.c_cc[VMIN] = 0;        // Read returns immediately (Polling / non-blocking)
+attr.c_cc[VTIME] = 0;       // Read has no timeout
+tcsetattr(STDIN_FILENO, TCSANOW, &attr); // Apply new terminal attributes
+
+// Signal handler lambda
+auto signalHandler = [](int signum) {
+   sigCaught = true;
+};
+
+// Setup catching signals (SIGINT | SIGTERM)
+signal(SIGINT, signalHandler);
+signal(SIGTERM, signalHandler);
+
+}
+
+    
+void snakeGame::run(){
+
+    // Main loop
+    enableBorder();
+
+    // Get the size of the terminal
+    s_size termSize = getFrameSize();
+    DEBUG_PRINT("\rTerminal Size: %d,%d\n",termSize.cols, termSize.rows);
+
+    // Check if terminal size is larger than minimum required.
+    try{
+        if((termSize.cols < MIN_SIZE_COL) || (termSize.rows < MIN_SIZE_ROW)){
+            throw(std::runtime_error("Terminal size is too small!"));
+        }
+    }catch(const std::runtime_error& e){
+            std::cerr << "Runtime error caught: " << e.what() << std::endl;
+            return;
+    }
+
+    // Initalise sound objects
+    sf::SoundBuffer soundBuffer;
+    soundBuffer.loadFromFile("audio/food.mp3");
+    sf::Sound sound(soundBuffer);
+
+    // Store command from terminal
+    char cmd;
+
+    // total food consumed
+    numFoodConsumed = 0;
+    
+    // Sleep delay
+    uint16_t sleep_ms = 100; 
+
+    // Current High Score
+    highScore = loadHighScore();
+
+    // Set the position of the snake in the centre of the screen
+    s_pos pos;
+    pos.y = termSize.rows/2;
+    pos.x = termSize.cols/2;
+    sneakySnake.setHeadPos(pos);
+    sneakySnake.setDirection(DIR_NORTH);
+
+    // Start by placing food
+    placeFood();
+
+    #ifdef DEBUG
+    addDebugInfo("Position X",pos.x);
+    addDebugInfo("Position Y",pos.y);
+    addDebugInfo("Command", (int16_t)0);
+    #endif
+    addDebugInfo("Current Score", (int16_t)numFoodConsumed);
+    addDebugInfo("High Score", (int16_t)highScore);
+
+    //addDebugInfo("High Score", loadHighscore());
+
+    while(1){
+
+        // Check if terminate signal received
+        if(true == sigCaught){
+            endGame();
+            return;
+        }
+
+        // read command from terminal
+        read(STDIN_FILENO, &cmd, 1);
+
+        if(cmd == PAUSE_COMMAND){
+            pauseGame();
+            cmd = 0;        // reset the command
+        }
+
+        // Check if food is consumed
+        if(true == foodConsumed()){
+            
+            // Play sound
+            sound.play();
+
+            // If yes, place new food and extend the snake body
+            sneakySnake.extendSnake();
+            placeFood();
+            numFoodConsumed += 1;
+            
+            // Increase speed of snake after every 5 food consumed
+            if(numFoodConsumed % 5 == 0)
+                sleep_ms -= SPEED_UP;
+            
+            // Update highscore
+            if(numFoodConsumed > highScore)
+                highScore = numFoodConsumed;
+
+        }
+
+        // Check if a collision occurred
+        if(true == checkCollision()){
+            endGame();
+            return;
+        }
+
+        // Check border collision
+        if(true == checkBorderCollision()){
+            endGame();
+            return;
+        }
+
+        // Print frame to terminal
+        clearFrame();
+        updateFrameLayout();
+
+        // get latest command
+        // use command to set next position of snake and design
+        updateSnake(cmd);
+
+        // Update debug info
+        #ifdef DEBUG
+        s_pos pos = sneakySnake.getHeadPos();
+        addDebugInfo("Position X",pos.x);
+        addDebugInfo("Position Y",pos.y);
+        addDebugInfo("Command", cmd);
+        #endif
+        addDebugInfo("Current Score", (int16_t)numFoodConsumed);
+        addDebugInfo("High Score", (int16_t)highScore);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms)); // Pause for a short time
+    }
+}
+    
+void snakeGame::pauseGame(void){
+
+    char cmd;
+    while(cmd != PAUSE_COMMAND){
+        read(STDIN_FILENO, &cmd, 1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Pause for a short time
+    }
+
+}
+
+void snakeGame::updateFrameLayout(void){
+    
+    s_pos pos;
+
+    lockFrameRenderer();
+    
+    // Update the frame with new positions    
+    updateFrameElement(SNAKE_FOOD, foodPos.y, foodPos.x);
+
+    // Iterate through the snake body and update frame
+    std::vector<snakeBodyElement> snakeBody = sneakySnake.getBody();
+    for(snakeBodyElement element: snakeBody){
+        pos = element.getPos();
+        updateFrameElement(element.getDesign(), pos.y, pos.x);
+    }
+
+    pos  = sneakySnake.getHeadPos();
+    updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
+
+    releaseFrameRenderer();
+}
+
+
+void snakeGame::endGame(){
+
+    // Initalise sound objects
+    sf::SoundBuffer soundBuffer;
+    soundBuffer.loadFromFile("audio/gameover.mp3");
+    sf::Sound sound(soundBuffer);
+    sound.play();
+
+    // Delay to play sound
+    while(sound.getStatus() == sf::SoundSource::Status::Playing);
+
+    // Save highscore
+    saveHighScore(highScore);
+
+}
+
+bool snakeGame::foodConsumed(void){
+    
+    s_pos headPos = sneakySnake.getHeadPos();
+    if((headPos.x == foodPos.x) && (headPos.y == foodPos.y)){
+        return true;
+    }
+
+    return false;
+}
+
+void snakeGame::placeFood(void){
+
+    s_size frameLimit = getFrameSize();
+
+    std::random_device rd; // Obtain a random number from hardware
+    std::mt19937 gen(rd()); // Seed the generator
+
+    // For columns
+    std::uniform_int_distribution<> distrib0(1, frameLimit.cols - 1); // Define the distribution
+    foodPos.x = distrib0(gen); // Generate the random number
+
+    // For rows
+    std::uniform_int_distribution<> distrib1(1, frameLimit.rows - 1); // Define the distribution
+    foodPos.y = distrib1(gen); // Generate the random number
+}
+
+void snakeGame::updateSnake(char cmd){
+
+    e_DIR dir = sneakySnake.getDirection();
+    // update direction based on command
+    switch(cmd){
+        case 'w':
+        case 'W':
+            if((dir == DIR_EAST)||(dir == DIR_WEST)){
+                sneakySnake.setDirection(DIR_NORTH);
+            }
+        break;
+        
+        case 'd':
+        case 'D':
+            if((dir == DIR_NORTH)||(dir == DIR_SOUTH)){
+                sneakySnake.setDirection(DIR_EAST);
+            }
+
+        break;
+        
+        case 'a':
+        case 'A':
+            if((dir == DIR_NORTH)||(dir == DIR_SOUTH)){
+                sneakySnake.setDirection(DIR_WEST);
+            }
+        break;
+        
+        case 's':
+        case 'S':
+            if((dir == DIR_EAST)||(dir == DIR_WEST)){
+                sneakySnake.setDirection(DIR_SOUTH);
+            }
+        break;
+        
+        default:
+        break;
+    }
+
+    // move snake by 1
+    sneakySnake.moveSnake();
+
+}
+
+bool snakeGame::checkCollision(){
+
+    return sneakySnake.getCollsionStatus();
+}
+
+bool snakeGame::checkBorderCollision(){
+
+    // Predict next position of snake head
+    // and check if border collision will occur
+    s_pos snakePos = sneakySnake.getHeadPos();
+    e_DIR direction = sneakySnake.getDirection();
+
+    switch(direction){
+        case DIR_NORTH:
+        snakePos.y -= 1;
+        break;
+        case DIR_SOUTH:
+        snakePos.y += 1;
+        break;
+        case DIR_EAST:
+        snakePos.x += 1;
+        break;
+        case DIR_WEST:
+        snakePos.x -= 1;
+        break;
+        default:
+        break;
+    }
+
+    return !isWithinFrame(snakePos);
+}
+
+uint16_t snakeGame::loadHighScore(void){
+
+    uint16_t highScore;
+    std::ifstream saveFile;
+
+    // Create a text file with the current empty frame
+    try{
+        saveFile.open("saveFile");
+
+        // Check if the file was created / opened
+        if (!saveFile.is_open()) {
+            throw(std::runtime_error("Unable to open file!"));
+        }
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    // Reset read and write pointers
+    saveFile.seekg(0);
+
+    char score;
+    // Get first char
+    saveFile >> score;
+    highScore = static_cast<uint16_t>(score);
+
+    if(saveFile.fail() == true){
+        // No integer. Assume this is the first attempt at reading
+        highScore = 0;
+    }
+
+    saveFile.close();
+    try{
+        if(saveFile.fail() == true){
+            throw(std::runtime_error("Unable to close save file!"));
+        }
+    }
+    catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+    
+    return highScore;
+
+}
+
+void snakeGame::saveHighScore(uint16_t highScore){
+
+    std::ofstream saveFile;
+
+    // Create a text file with the current empty frame
+    try{
+        saveFile.open("saveFile");
+
+        // Check if the file was created / opened
+        if (!saveFile.is_open()) {
+            throw(std::runtime_error("Unable to open file!"));
+        }
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    saveFile.seekp(0);
+
+    saveFile << static_cast<char>(highScore);
+
+    try{
+        if(saveFile.fail() == true){
+            throw(std::runtime_error("Unable to save high score!"));
+        }
+    }
+    catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+    saveFile.close();
+    try{
+        if(saveFile.fail() == true){
+            throw(std::runtime_error("Unable to close save file!"));
+        }
+    }
+    catch(const std::runtime_error& e){
+        std::cerr << "Runtime error caught: " << e.what() << std::endl;
+    }
+
+}
