@@ -2,8 +2,10 @@
 #define TETRIS_H
 
 #include <array>
+#include <iostream>
 #include "block.h"
 #include "frame.h"
+
 
 class tetris : public frame{
 
@@ -23,6 +25,7 @@ class tetris : public frame{
     void clearLine();
     void clearScreen();
     void collisionBorder();
+    void buildBorder();
 
     s_size minSize = {.rows = 22, .cols = 24};
 

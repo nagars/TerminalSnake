@@ -66,6 +66,18 @@ void block::rotate(e_rotate rotate){
     }
 }
 
+void block::matrixTranspose(){
+
+}
+
+void block::rowReverse(){
+
+}
+
+void block::colReverse(){
+    
+}
+
 /**
  * []
  * []

@@ -10,7 +10,7 @@ CXXFLAGS = -Iinclude -Iinclude/common -Iinclude/snake -Iinclude/tetris -Wall -st
 LDFLAGS = -lsfml-audio
 
 # The name of the executable
-TARGET = snake
+TARGET = game
 
 # Find all .cpp files in the src directory and its subdirectories
 SRCS = $(shell find src -name '*.cpp')
