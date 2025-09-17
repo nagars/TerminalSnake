@@ -2,6 +2,7 @@
 #define BLOCK_H
 
 #include <array>
+#include "common.h"
 
 typedef enum{
     RIGHT,
@@ -9,7 +10,7 @@ typedef enum{
 }e_rotate;
 
 //typedef std::array<std::array<char,10>,10> Matrix;
-using Matrix = std::array<std::array<char,10>,5>;
+using blockMatrix = std::array<std::array<char,10>,5>;
 
 
 class block{
@@ -20,11 +21,14 @@ class block{
 
     void setShape(char);
     void rotate(e_rotate);
-    Matrix getMatrix(void);
+    blockMatrix getMatrix(void);
+    void setPosition(s_pos);
+    s_pos getPosition(void);
 
     private:
     //std::vector<std::vector<char>> matrix(10, std::vector<char>(10));
-    Matrix matrix;
+    blockMatrix matrix;
+    s_pos position;
     void matrixTranspose();
     void rowReverse();
     void colReverse();

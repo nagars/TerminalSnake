@@ -44,7 +44,7 @@ void block::setShape(char shape){
 
 }
 
-Matrix block::getMatrix(){
+blockMatrix block::getMatrix(){
     return matrix;
 }
 
@@ -75,8 +75,19 @@ void block::rowReverse(){
 }
 
 void block::colReverse(){
-    
+
 }
+
+void block::setPosition(s_pos pos){
+
+    position = pos;
+}
+
+s_pos block::getPosition(void){
+
+    return position;
+}
+
 
 /**
  * []
