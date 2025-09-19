@@ -17,8 +17,8 @@
 
 // Tracks the size of the frame / terminal
 typedef struct {
-    uint16_t rows;
-    uint16_t cols;
+    int16_t rows;
+    int16_t cols;
 }s_size;
 
 typedef uint16_t fps;
