@@ -29,10 +29,10 @@ class board{
     std::array <char,7> shapes = {'I','O','J','T','L','S','Z'};
     std::vector<std::string> boardMatrix;
     std::unique_ptr<block> shape;
-    s_pos blockStartPos = {.x = tetrisBoardSize.cols/2, .y = -4};
+    s_pos blockStartPos; //= {.x = tetrisBoardSize.cols, .y = -4};///static_cast<int16_t>(2), .y = -4};
 
     // Matrix to track logic. Not to be confused with size to print
-    const s_size tetrisBoardSize = {.rows = 20, .cols = 5};  
+    const s_size tetrisBoardSize = {.rows = 20, .cols = 10};  
 
     protected:
 };

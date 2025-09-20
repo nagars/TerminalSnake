@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <termios.h>        // For termios functions
 
+#define LOOPDELAY   400
 
 #define PAUSE_COMMAND   32
 #define MOVE_RIGHT_COMMAND  'd'
@@ -59,6 +60,9 @@ void tetris::run(){
 
     while(1){
 
+        cmd = '0';
+        buildGameBoard();
+
         // If no object is active, select one at random
         if(f_shapeActive == false){
             // shape = std::unique_ptr<block>(new block(shapes[randomNumGen()]));
@@ -71,6 +75,8 @@ void tetris::run(){
         // read command from terminal
         read(STDIN_FILENO, &cmd, 1);
 
+//        std::cout << cmd << std::endl;
+
         if(cmd == PAUSE_COMMAND){
             pause();
         }else{
@@ -78,6 +84,9 @@ void tetris::run(){
             if(f_shapeActive == true){
                 switch(cmd){
                     case MOVE_DOWN_COMMAND:
+                    gameBoard.shiftDownShape();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Pause for a short time
+                    continue;
                     break;
                     case MOVE_LEFT_COMMAND:
                     break;
@@ -91,19 +100,18 @@ void tetris::run(){
                     break;
                 }
             }
-        }cmd = 0;        // reset the command
+        };        // reset the command
 
        
         // drop further
         gameBoard.shiftDownShape();
 
-        //printGame();
         // check collision?
 
         // reset active object
 
         // Select a shape to load
-        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Pause for a short time
+        std::this_thread::sleep_for(std::chrono::milliseconds(LOOPDELAY)); // Pause for a short time
 
     
     }
@@ -143,42 +151,6 @@ void tetris::buildInfoBoard(){
 }
 
 
-
-void tetris::updateGameBoard(){
-
-    // // get position of shape
-    // blockMatrix matrix = shape->getMatrix();
-
-    // // check how much of the shape should be printed 
-    // // to the board 
-    // std::pair<s_pos,s_pos> dimension = shape->getDimension();
-
-    // // Check if the shape is completely within the board
-    // // Left top corner and right bottom corners are within the board
-    // if((dimension.first.y >= 0) && (dimension.first.x >= 0) && (dimension.second.x < tetrisBoardSize.cols)){
-    //     // Print entire shape
-    //     s_pos posCornerElement = dimension.first; // Grid position of first element of shape
-
-    //     for(uint16_t row = 0; row < matrix.size(); row++){
-    //         for(uint16_t col = 0; col < matrix[row].size(); col++){
-
-    //             char shapeElement = matrix[row][col];
-    //             // If element is part of shape, insert it into grid array
-    //             if(shapeElement == '[' || shapeElement == ']'){
-    //                 gameBoard[posCornerElement.y + row][posCornerElement.x + col] = shapeElement;
-    //             }
-    //         }
-    //     }
-    
-    // }else{
-    //     // Only print rows that have a position greater than 0
-
-    // }
-
-    // Update game board
-
-}
-
 /**
  * <! . . . . .!>
  * <! . . . . .!>
@@ -194,10 +166,11 @@ void tetris::buildGameBoard(){
 
     s_size frame = getFrameSize();
     std::string line(frame.cols, ' ');
+    uint16_t offset;
 
     for(uint16_t m = 0; m < tetrisSize.rows - 2; m++){
 
-        uint16_t offset = originOffsetInfoLeft.x - 1;
+        offset = originOffsetInfoLeft.x - 1;
         // assign info box
         // line.replace()
 
@@ -207,41 +180,39 @@ void tetris::buildGameBoard(){
         line[offset++] = '!';
 
         // Fill board with empty blocks
-        for(uint16_t n = 0; n < tetrisSize.cols - 2; n++){
+        for(uint16_t n = 0; n < tetrisSize.cols - 4; n++){
             if(n % 2)
                 line[n + offset] = '.';
+            else
+                line[n + offset] = ' ';
         }
-        offset += tetrisSize.cols - 2;
 
         // Fill sections where shapes exist
         std::string boardM = gameBoard.getRow(m);
         for(uint16_t l = 0; l < boardM.size(); l++){
             if(boardM[l] == 'A' || boardM[l] == 'L'){
-                line[2*l] = '[';
-                line[2*l + 1] = ']';
+                line[offset + 2*l] = '[';
+                line[offset + 2*l + 1] = ']';
             }
         }
 
-        line[offset++] = '>';
+        offset += tetrisSize.cols - 4;
         line[offset++] = '!';
+        line[offset++] = '>';
 
         // Update matrix to print to terminal
         updateFrameRow(line, m);
     }
 
+    offset = originOffsetTettris.x + 1;
     // Fill second last line
-    line.replace((size_t)originOffsetTettris.x + 1, (size_t)tetrisSize.cols - 2, (size_t)tetrisSize.cols - 2,'=');
-
-    // line[0] = '<';
-    // line[1] = '!';
-    // line[line.size() - 2] = '!';
-    // line[line.size() - 1] = '>';
+    line.replace((size_t)offset, (size_t)tetrisSize.cols - 4, (size_t)tetrisSize.cols - 4,'=');
 
     updateFrameRow(line, tetrisSize.rows - 2);
 
     // Fill last line
     line.assign(line.size(),' ');
-    for(uint16_t n = originOffsetTettris.x + 1; n < originOffsetTettris.x + 1 + (size_t)tetrisSize.cols - 2; n++){
+    for(uint16_t n = offset; n < originOffsetTettris.x + 1 + (size_t)tetrisSize.cols - 4; n++){
         if(n % 2)
             line[n] = '/';
         else
@@ -253,63 +224,4 @@ void tetris::buildGameBoard(){
     printFrame();
 }
 
-// void tetris::buildGameBoard(){
- 
-//     // Prepare a string to print to terminal
-//     std::string line(tetrisSize.cols,' ');
-//     line.assign(line.size(),' ');
-
-//     // Fill board
-//     line[0] = '<';
-//     line[1] = '!';
-//     line[line.size() - 2] = '!';
-//     line[line.size() - 1] = '>';
-    
-//     // Each alternate element has a .
-//     for(uint16_t n = 2; n < line.size() - 2; n++){
-//         if(n % 2)
-//             line[n] = '.';
-//     }
-
-
-//     // for(std::string &row: gameBoard){
-//     //     row = line;
-//     // }
-
-//     // Fill second last line
-//     line.assign(line.size(),'=');
-
-//     line[0] = '<';
-//     line[1] = '!';
-//     line[line.size() - 2] = '!';
-//     line[line.size() - 1] = '>';
-
-//     //std::copy(line.begin(), line.end(), gameBoard[gameBoard.size() - 2].begin());
-//     gameBoard[gameBoard.size() - 2] = line;
-
-//     // Fill last line
-//     line.assign(line.size(),' ');
-//     for(uint16_t n = 2; n < line.size() - 2; n++){
-//         if(n % 2)
-//             line[n] = '/';
-//         else
-//             line[n] = '\\';
-//     }
-
-//     gameBoard[gameBoard.size() - 1] = line;
-// }
-
-// void tetris::printGame(){
-
-//     s_size frameSize = getFrameSize();
-//     std::string row(frameSize.cols,' ');
-
-//     updateFrameRow(row, 0);
-//     for(uint16_t n = 1; n < gameBoard.size(); n++){
-//         row.replace(originOffsetTettris.x, gameBoard[n].size(), gameBoard[n]);
-//         updateFrameRow(row, n);
-//     }
-
-//     printFrame();
-// }
 

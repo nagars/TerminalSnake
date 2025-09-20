@@ -204,10 +204,10 @@ void block::createS(){
     // matrix[3][3] = '[';
     // matrix[3][4] = ']';
 
-    matrix[2][1] = '*';
     matrix[2][2] = '*';
-    matrix[1][2] = '*';
-    matrix[1][3] = '*'; 
+    matrix[2][3] = '*';
+    matrix[1][3] = '*';
+    matrix[1][4] = '*'; 
 }
 
 /**

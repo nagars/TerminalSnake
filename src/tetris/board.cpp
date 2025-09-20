@@ -9,11 +9,15 @@ board::board(){
         row.resize(tetrisBoardSize.cols, ' ');
     }
 
+    blockStartPos.x = tetrisBoardSize.cols/2 - 1;
+    blockStartPos.y = -4;
+
 }
 
 board::board(s_size size){
 
-    blockStartPos = {.x = size.cols / 2, .y = -5};
+    blockStartPos = {.x = size.cols, .y = -4};
+    blockStartPos.x /= 2 - 1;
 
     boardMatrix.resize(size.rows);
     for(auto row: boardMatrix){
@@ -107,12 +111,12 @@ void board::shiftDownShape(){
             
             // Check if the row being checked is within the board
             int16_t boardRow = topLeft.y + row;
-            if(boardRow >= 0){
+            if(boardRow >= 0 && boardRow < boardMatrix.size()){
 
-                for(uint16_t col = 0; col < shapeMatrix[row].size(); col++){
+                for(uint16_t col = 0; col < shapeMatrix[0].size(); col++){
                     int16_t boardCol = topLeft.x + col;
 
-                    if(boardCol >= 0){
+                    if(boardCol >= 0 && boardCol < boardMatrix[0].size()){
                         if(shapeMatrix[row][col] == '*'){
                             // Set element as active in board
                             boardMatrix[boardRow][boardCol] = 'A';
