@@ -6,6 +6,13 @@
 #include "frame.h"
 #include "block.h"
 
+typedef enum{
+    NO_COLLISION,       
+    SIDE_COLLISION,     // Collision with side of board
+    BOTTOM_COLLISION,   // Collision with bottom of board
+    SHAPE_COLLISION,    // Collision with another shape
+}s_collisionStatus;
+
 class board{
     public:
     board();
@@ -17,14 +24,15 @@ class board{
     void shiftDownShape();
     void rotateRightShape();
     void rotateLeftShape();
+    bool getShapeActiveStatus();
 
     std::string getRow(uint8_t);
     std::vector<std::string> getMatrix();
 
     private:
+    void moveShape(s_pos);
     void lockShape();
-    bool checkCollisionBorder();
-    bool checkCollisionOtherShape();
+    s_collisionStatus checkCollisionBorder(s_pos);
     uint8_t randomNumGen();
     std::array <char,7> shapes = {'I','O','J','T','L','S','Z'};
     std::vector<std::string> boardMatrix;

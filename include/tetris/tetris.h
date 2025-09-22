@@ -16,6 +16,7 @@ class tetris : public frame{
 
     public:
     tetris();
+    ~tetris();
     void run();
     void pause();
     void end();

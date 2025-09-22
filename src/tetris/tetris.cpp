@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <termios.h>        // For termios functions
 
-#define LOOPDELAY   400
+#define LOOPDELAY   100
 
 #define PAUSE_COMMAND   32
 #define MOVE_RIGHT_COMMAND  'd'
@@ -17,11 +17,14 @@
 s_pos originOffsetTettris;
 s_pos originOffsetInfoLeft;
 
+struct termios oldAttr;
+
 tetris::tetris() : frame(){
 
     // Change terminal settings to a non-blocking read
     struct termios attr;
     tcgetattr(STDIN_FILENO, &attr);     // Get current terminal attributes
+    oldAttr = attr;
     attr.c_lflag &= ~(ICANON | ECHO);   // Disable canonical mode and echoing
     attr.c_cc[VMIN] = 0;                // Read returns immediately (Polling / non-blocking)
     attr.c_cc[VTIME] = 0;               // Read has no timeout
@@ -46,10 +49,12 @@ tetris::tetris() : frame(){
     buildGameBoard();
     buildInfoBoard();
 
-    // Print Game
-    //printGame();
-
 };
+
+tetris::~tetris(){
+    // reset terminal settings
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldAttr); // Restore original terminal settings
+}
 
 void tetris::run(){
 
@@ -62,11 +67,11 @@ void tetris::run(){
 
         cmd = '0';
         buildGameBoard();
+        // Check is a new shape is required
+        f_shapeActive = gameBoard.getShapeActiveStatus();
 
         // If no object is active, select one at random
         if(f_shapeActive == false){
-            // shape = std::unique_ptr<block>(new block(shapes[randomNumGen()]));
-            // shape->setPosition(blockStartPos);
             gameBoard.createNewShape();
             f_shapeActive = true;
             continue;
@@ -75,45 +80,38 @@ void tetris::run(){
         // read command from terminal
         read(STDIN_FILENO, &cmd, 1);
 
-//        std::cout << cmd << std::endl;
-
         if(cmd == PAUSE_COMMAND){
             pause();
-        }else{
-            // If shape is active
-            if(f_shapeActive == true){
-                switch(cmd){
-                    case MOVE_DOWN_COMMAND:
-                    gameBoard.shiftDownShape();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Pause for a short time
-                    continue;
-                    break;
-                    case MOVE_LEFT_COMMAND:
-                    break;
-                    case MOVE_RIGHT_COMMAND:
-                    break;
-                    case ROTATE_LEFT_COMMAND:
-                    break;
-                    case ROTATE_RIGHT_COMMAND:
-                    break;
-                    default:
-                    break;
-                }
+            continue;
+        }
+
+        // If shape is active
+        if(f_shapeActive == true){
+            switch(cmd){
+                case MOVE_DOWN_COMMAND:
+                gameBoard.shiftDownShape();
+                std::this_thread::sleep_for(std::chrono::milliseconds(20)); // Pause for a short time
+                continue;
+                break;
+                case MOVE_LEFT_COMMAND:
+                gameBoard.shiftLeftShape();
+                break;
+                case MOVE_RIGHT_COMMAND:
+                gameBoard.shiftRightShape();
+                break;
+                case ROTATE_LEFT_COMMAND:
+                gameBoard.rotateLeftShape();
+                break;
+                case ROTATE_RIGHT_COMMAND:
+                gameBoard.rotateRightShape();
+                break;
+                default:
+                gameBoard.shiftDownShape();
+                break;
             }
-        };        // reset the command
-
-       
-        // drop further
-        gameBoard.shiftDownShape();
-
-        // check collision?
-
-        // reset active object
-
+        }
         // Select a shape to load
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOPDELAY)); // Pause for a short time
-
-    
     }
 }
 
@@ -175,7 +173,7 @@ void tetris::buildGameBoard(){
         // line.replace()
 
         offset = originOffsetTettris.x - 1;
-        // assign tetris board
+        // Fill left boundary
         line[offset++] = '<';
         line[offset++] = '!';
 
@@ -195,7 +193,7 @@ void tetris::buildGameBoard(){
                 line[offset + 2*l + 1] = ']';
             }
         }
-
+        // Fill the right boundary
         offset += tetrisSize.cols - 4;
         line[offset++] = '!';
         line[offset++] = '>';
@@ -207,7 +205,6 @@ void tetris::buildGameBoard(){
     offset = originOffsetTettris.x + 1;
     // Fill second last line
     line.replace((size_t)offset, (size_t)tetrisSize.cols - 4, (size_t)tetrisSize.cols - 4,'=');
-
     updateFrameRow(line, tetrisSize.rows - 2);
 
     // Fill last line
@@ -218,7 +215,6 @@ void tetris::buildGameBoard(){
         else
             line[n] = '\\';
     }
-
     updateFrameRow(line, tetrisSize.rows - 1);
 
     printFrame();

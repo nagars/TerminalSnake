@@ -44,7 +44,7 @@ void board::lockShape(){
     for(auto &row: boardMatrix){
         for(auto &elem: row){
             if(elem == 'A')
-                elem = 'P';
+                elem = 'L';
         }
     }
 
@@ -74,18 +74,148 @@ uint8_t board::randomNumGen(){
 
 }
 
+bool board::getShapeActiveStatus(){
+    
+    if(shape == NULL){
+        return false;
+    }
+    return true;
+}
+
 void board::shiftLeftShape(){
 
-}
-void board::shiftRightShape(){
-
-}
-void board::shiftDownShape(){
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return;
+    }
 
     // Get the position of the centre of the shape 
     // matrix on the board
-    s_pos pos = shape->getPosition();
+    s_pos newPos = shape->getPosition();
+    newPos.x -= 1;
+    s_collisionStatus status = checkCollisionBorder(newPos);
+    switch(status){
+        case NO_COLLISION:
+                moveShape(newPos);
+                break;
+        case SIDE_COLLISION:
+                break;
+        case BOTTOM_COLLISION:
+        case SHAPE_COLLISION:
+            lockShape();
+            break;
+        default:
+        break;
+    }
+}
+
+void board::shiftRightShape(){
+    
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return;
+    }
+
+    // Get the position of the centre of the shape 
+    // matrix on the board
+    s_pos newPos = shape->getPosition();
+    newPos.x += 1;
+    s_collisionStatus status = checkCollisionBorder(newPos);
+    switch(status){
+        case NO_COLLISION:
+                moveShape(newPos);
+                break;
+        case SIDE_COLLISION:
+                break;
+        case BOTTOM_COLLISION:
+        case SHAPE_COLLISION:
+            lockShape();
+            break;
+        default:
+        break;
+    }
+}
+
+void board::shiftDownShape(){
+
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return;
+    }
+
+    // Get the position of the centre of the shape 
+    // matrix on the board
+    s_pos newPos = shape->getPosition();
+    newPos.y += 1;
+    s_collisionStatus status = checkCollisionBorder(newPos);
+    switch(status){
+        case NO_COLLISION:
+                moveShape(newPos);
+                break;
+        case SIDE_COLLISION:
+                break;
+        case BOTTOM_COLLISION:
+        case SHAPE_COLLISION:
+            lockShape();
+            break;
+        default:
+        break;
+    }
+}
+
+s_collisionStatus board::checkCollisionBorder(s_pos newPos){
+
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return NO_COLLISION;
+    }
+
+    // Check if any 'A' active element of the
+    // shape matrix shifts outside the board matrix
+    block tempShape = *shape;
+    tempShape.setPosition(newPos);
+    blockMatrix shapeMatrix = tempShape.getMatrix();
+
+    std::pair<s_pos, s_pos> dimension = tempShape.getDimension();
+    s_pos topLeft = dimension.first;
+    s_pos bottomRight = dimension.second;
+
+    for(uint16_t row = 0; row < shapeMatrix.size(); row++){
+        int16_t boardRow = topLeft.y + row;
+        for(uint16_t col = 0; col < shapeMatrix[0].size(); col++){
+            int16_t boardCol = topLeft.x + col;
+            if(shapeMatrix[row][col] == '*'){
+                if((boardCol < 0) || ((boardCol >= boardMatrix[0].size()))){
+                    return SIDE_COLLISION;
+                }
+                if((boardRow >= 0) && (boardRow >= boardMatrix.size())){
+                    return BOTTOM_COLLISION;
+                }
+                if((boardRow >= 0) && boardMatrix[boardRow][boardCol] == 'L'){
+                    return SHAPE_COLLISION;
+                }
+            }
+        }
+    }
+    return NO_COLLISION;
+}
+
+
+void board::moveShape(s_pos newPos){
+
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return;
+    }
+
+    shape->setPosition(newPos);
     blockMatrix shapeMatrix = shape->getMatrix();
+    // Get coordinates of corners of the shape matrix
+    // in relation to the centre position of the shape
+    // on the board
+    std::pair<s_pos, s_pos> dimension = shape->getDimension();
+    s_pos topLeft = dimension.first;
+    s_pos bottomRight = dimension.second;
 
     // Clear the current active shape in the board grid
     for(auto& row : boardMatrix){
@@ -95,16 +225,7 @@ void board::shiftDownShape(){
         }
     }
 
-    pos.y += 1;
-
-    // Get coordinates of corners of the shape matrix
-    // in relation to the centre position of the shape
-    // on the board
-    std::pair<s_pos, s_pos> dimension = shape->getDimension();
-    s_pos topLeft = dimension.first;
-    s_pos bottomRight = dimension.second;
-
-    // Check if shape is outside of grid
+    // Check if shape is within the grid
     if(bottomRight.y >= 0){
         
         for(uint16_t row = 0; row < shapeMatrix.size(); row++){
@@ -128,12 +249,23 @@ void board::shiftDownShape(){
     }
 
     // Update position
-    shape->setPosition(pos);
+    //shape->setPosition(newPos);
+
 }
 
 void board::rotateRightShape(){
 
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return;
+    }
+
 }
 void board::rotateLeftShape(){
+
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return;
+    }
 
 }
