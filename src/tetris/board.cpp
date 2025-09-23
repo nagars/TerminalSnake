@@ -69,7 +69,7 @@ uint8_t board::randomNumGen(){
     std::random_device rd; // Obtain a random number from hardware
     std::mt19937 gen(rd()); // Seed the generator
 
-    std::uniform_int_distribution<> distrib0(0, 7); // Define the distribution
+    std::uniform_int_distribution<> distrib0(0, 6); // Define the distribution
     return (uint8_t)distrib0(gen); // Generate the random number
 
 }
@@ -93,7 +93,7 @@ void board::shiftLeftShape(){
     // matrix on the board
     s_pos newPos = shape->getPosition();
     newPos.x -= 1;
-    s_collisionStatus status = checkCollisionBorder(newPos);
+    s_collisionStatus status = checkCollisionMove(newPos);
     switch(status){
         case NO_COLLISION:
                 moveShape(newPos);
@@ -120,7 +120,7 @@ void board::shiftRightShape(){
     // matrix on the board
     s_pos newPos = shape->getPosition();
     newPos.x += 1;
-    s_collisionStatus status = checkCollisionBorder(newPos);
+    s_collisionStatus status = checkCollisionMove(newPos);
     switch(status){
         case NO_COLLISION:
                 moveShape(newPos);
@@ -147,7 +147,7 @@ void board::shiftDownShape(){
     // matrix on the board
     s_pos newPos = shape->getPosition();
     newPos.y += 1;
-    s_collisionStatus status = checkCollisionBorder(newPos);
+    s_collisionStatus status = checkCollisionMove(newPos);
     switch(status){
         case NO_COLLISION:
                 moveShape(newPos);
@@ -163,17 +163,9 @@ void board::shiftDownShape(){
     }
 }
 
-s_collisionStatus board::checkCollisionBorder(s_pos newPos){
 
-    if(shape == NULL){
-        std::cerr << "No active shape is in play!" << std::endl;
-        return NO_COLLISION;
-    }
+s_collisionStatus board::checkCollision(block& tempShape){
 
-    // Check if any 'A' active element of the
-    // shape matrix shifts outside the board matrix
-    block tempShape = *shape;
-    tempShape.setPosition(newPos);
     blockMatrix shapeMatrix = tempShape.getMatrix();
 
     std::pair<s_pos, s_pos> dimension = tempShape.getDimension();
@@ -198,6 +190,34 @@ s_collisionStatus board::checkCollisionBorder(s_pos newPos){
         }
     }
     return NO_COLLISION;
+}
+
+s_collisionStatus board::checkCollisionRotate(e_rotate dir){
+
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return NO_COLLISION;
+    }
+
+    // Check if any 'A' active element of the
+    // shape matrix shifts outside the board matrix
+    block tempShape = *shape;
+    tempShape.rotate(dir);
+    return checkCollision(tempShape);
+}
+
+s_collisionStatus board::checkCollisionMove(s_pos newPos){
+
+    if(shape == NULL){
+        std::cerr << "No active shape is in play!" << std::endl;
+        return NO_COLLISION;
+    }
+
+    // Check if any 'A' active element of the
+    // shape matrix shifts outside the board matrix
+    block tempShape = *shape;
+    tempShape.setPosition(newPos);
+    return checkCollision(tempShape);
 }
 
 
@@ -248,9 +268,6 @@ void board::moveShape(s_pos newPos){
         }
     }
 
-    // Update position
-    //shape->setPosition(newPos);
-
 }
 
 void board::rotateRightShape(){
@@ -258,6 +275,21 @@ void board::rotateRightShape(){
     if(shape == NULL){
         std::cerr << "No active shape is in play!" << std::endl;
         return;
+    }
+
+    s_collisionStatus status = checkCollisionRotate(RIGHT);
+    switch(status){
+        case NO_COLLISION:
+            shape->rotate(RIGHT);                
+                break;
+        case SIDE_COLLISION:
+                break;
+        case BOTTOM_COLLISION:
+        case SHAPE_COLLISION:
+            lockShape();
+            break;
+        default:
+        break;
     }
 
 }
@@ -268,4 +300,45 @@ void board::rotateLeftShape(){
         return;
     }
 
+    s_collisionStatus status = checkCollisionRotate(LEFT);
+    switch(status){
+        case NO_COLLISION:
+            shape->rotate(LEFT);                
+                break;
+        case SIDE_COLLISION:
+                break;
+        case BOTTOM_COLLISION:
+        case SHAPE_COLLISION:
+            lockShape();
+            break;
+        default:
+        break;
+    }
+}
+
+bool board::checkLineComplete(){
+
+    bool lineComplete = true;
+    for(uint16_t n = boardMatrix.size() - 1; n > 0; n--){
+        std::string& row = boardMatrix[n];
+        for(auto elem: row){
+            if((elem == 'A') || (elem == ' ')){
+                lineComplete = false;
+                break;
+            }
+        }
+        
+        if(lineComplete == true){
+            // Whole line is 'L'
+            row.assign(row.size(), ' ');
+            
+            // Drop all elements above this line
+            for(uint16_t m = n; m > 0; m--){
+                boardMatrix[m] = boardMatrix[m - 1];
+            }
+        }
+
+    }
+
+    return lineComplete;
 }

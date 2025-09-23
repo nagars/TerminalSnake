@@ -66,7 +66,16 @@ void tetris::run(){
     while(1){
 
         cmd = '0';
+
+        // Select a shape to load
+        std::this_thread::sleep_for(std::chrono::milliseconds(LOOPDELAY)); // Pause for a short time
+
         buildGameBoard();
+
+        // Check if a line has been completed
+        if(gameBoard.checkLineComplete() == true)
+            continue;
+
         // Check is a new shape is required
         f_shapeActive = gameBoard.getShapeActiveStatus();
 
@@ -110,8 +119,7 @@ void tetris::run(){
                 break;
             }
         }
-        // Select a shape to load
-        std::this_thread::sleep_for(std::chrono::milliseconds(LOOPDELAY)); // Pause for a short time
+
     }
 }
 

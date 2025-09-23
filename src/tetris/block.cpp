@@ -1,5 +1,6 @@
 #include "block.h"
 #include <stdexcept>
+#include <algorithm>
 #include <iostream>
 #include <stdint.h>
 
@@ -61,9 +62,28 @@ std::pair<s_pos, s_pos> block::getDimension(){
 }
 
 void block::rotate(e_rotate rotate){
+
+    // Check if figure is symmetric
+    //  no need to rotate if it is
+    bool symmetric = true;
+    for(uint16_t n = 0; n < matrix.size(); n++){
+        for(uint16_t m = n + 1; m < matrix[0].size(); m++){
+            if(matrix[n][m] != matrix[m][n]){   
+                symmetric = false;
+                break;
+            }
+        }
+        if(symmetric == false){
+            break;
+        }
+    }
+
+    if(symmetric == true)
+        return;
+
     if(rotate == LEFT){
+        rowReverse();
         matrixTranspose();
-        colReverse();
     }else if(rotate == RIGHT){
         matrixTranspose();
         rowReverse();
@@ -76,19 +96,29 @@ void block::rotate(e_rotate rotate){
                  << ". Error: " << e.what() << std::endl;
         }
     }
+
 }
 
 void block::matrixTranspose(){
 
+    if(matrix[0].size() != matrix.size()){
+        std::cerr << "Matrix transpose needs a square matrix!" << std::endl;
+        return;
+    }
+
+    for(uint16_t n = 0; n < matrix.size(); n++){
+        for(uint16_t m = n + 1; m < matrix[0].size(); m++){
+            std::swap(matrix[n][m], matrix[m][n]);
+        }
+    }
 }
 
 void block::rowReverse(){
 
+    for(auto& row: matrix)
+        std::reverse(row.begin(), row.end());
 }
 
-void block::colReverse(){
-
-}
 
 void block::setPosition(s_pos pos){
 
@@ -183,10 +213,10 @@ void block::createO(){
     // matrix[3][7] = '[';
     // matrix[3][8] = ']';
 
+    matrix[2][2] = '*';
+    matrix[3][2] = '*';
     matrix[2][3] = '*';
-    matrix[3][3] = '*';
-    matrix[2][4] = '*';
-    matrix[3][4] = '*'; 
+    matrix[3][3] = '*'; 
 }
 
 /**
@@ -204,10 +234,10 @@ void block::createS(){
     // matrix[3][3] = '[';
     // matrix[3][4] = ']';
 
+    matrix[2][1] = '*';
     matrix[2][2] = '*';
-    matrix[2][3] = '*';
-    matrix[1][3] = '*';
-    matrix[1][4] = '*'; 
+    matrix[1][2] = '*';
+    matrix[1][3] = '*'; 
 }
 
 /**

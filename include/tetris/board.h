@@ -25,6 +25,7 @@ class board{
     void rotateRightShape();
     void rotateLeftShape();
     bool getShapeActiveStatus();
+    bool checkLineComplete();
 
     std::string getRow(uint8_t);
     std::vector<std::string> getMatrix();
@@ -32,7 +33,9 @@ class board{
     private:
     void moveShape(s_pos);
     void lockShape();
-    s_collisionStatus checkCollisionBorder(s_pos);
+    s_collisionStatus checkCollision(block&);
+    s_collisionStatus checkCollisionRotate(e_rotate);
+    s_collisionStatus checkCollisionMove(s_pos);
     uint8_t randomNumGen();
     std::array <char,7> shapes = {'I','O','J','T','L','S','Z'};
     std::vector<std::string> boardMatrix;

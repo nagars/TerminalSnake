@@ -34,7 +34,6 @@ class block{
     s_pos position = {.x = 0, .y = 0};
     void matrixTranspose();
     void rowReverse();
-    void colReverse();
 
     void createI();
     void createO();
