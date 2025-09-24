@@ -29,11 +29,12 @@ class tetris : public frame{
     private:
     //std::vector<std::vector<char>> gameBoard;
     //std::array<std::string,tetrisSize.rows> gameBoard;
-    board gameBoard;
-    void clearScreen();
+    tetrisBoard gameBoard;
+    infoBoard scoreBoard;
     void collisionBorder();
-    void buildGameBoard();
-    void buildInfoBoard();
+    void buildGameBoard(std::string&, uint16_t);
+    void buildInfoBoard(std::string&, uint16_t);
+    void buildScreen();
 
     protected:
 

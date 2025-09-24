@@ -46,8 +46,6 @@ tetris::tetris() : frame(){
     clearFrame();
 
     // Build the border
-    buildGameBoard();
-    buildInfoBoard();
 
 };
 
@@ -70,7 +68,7 @@ void tetris::run(){
         // Select a shape to load
         std::this_thread::sleep_for(std::chrono::milliseconds(LOOPDELAY)); // Pause for a short time
 
-        buildGameBoard();
+        buildScreen();
 
         // Check if a line has been completed
         if(gameBoard.checkLineComplete() == true)
@@ -89,6 +87,11 @@ void tetris::run(){
         // read command from terminal
         read(STDIN_FILENO, &cmd, 1);
 
+        // Clear the rest of input buffer
+        char junk;
+        while (read(STDIN_FILENO, &junk, 1) > 0);
+    
+
         if(cmd == PAUSE_COMMAND){
             pause();
             continue;
@@ -99,7 +102,7 @@ void tetris::run(){
             switch(cmd){
                 case MOVE_DOWN_COMMAND:
                 gameBoard.shiftDownShape();
-                std::this_thread::sleep_for(std::chrono::milliseconds(20)); // Pause for a short time
+                std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Pause for a short time
                 continue;
                 break;
                 case MOVE_LEFT_COMMAND:
@@ -132,42 +135,80 @@ void tetris::pause(){
     }
 
 }
+
 // void tetris::end(){
 
 
 // }
 
-// void tetris::clearLine(){
 
+/**
+ *  Full Lines:
+ *  Level:
+ *  Score:
+ *  Time:
+ * 
+ * 
+ * 
+ *              [][][]
+ *                []
+ */
+void tetris::buildInfoBoard(std::string& line, uint16_t m){
 
-// }
-
-// void tetris::clearScreen(){
-
-
-// }
-
-// void tetris::collisionBorder(){
-
-
-// }
-
-void tetris::buildInfoBoard(){
+    uint16_t offset = originOffsetInfoLeft.x - 1;
+    std::string boardM = scoreBoard.getRow(m);
+    
+    for(uint16_t l = 0; l < boardM.size(); l++){
+        if(boardM[l] == 'A' || boardM[l] == 'L'){
+            line[offset + 2*l] = '[';
+            line[offset + 2*l + 1] = ']';
+        }
+    }
 
 }
 
 
 /**
- * <! . . . . .!>
- * <! . . . . .!>
- * <! . . . . .!>
- * <! . . . . .!>
- * <! . . . . .!>
- * <!==========!>
- *   \/\/\/\/\/
+ * Full Lines:      <! . . . . .!>
+ * Level:           <! . . . . .!>
+ * Score:           <! . . . . .!>
+ * Time:            <! . . . . .!>
+ *          [][]    <! . . . . .!>
+ *                  <!==========!>
+ *                    \/\/\/\/\/
  */
 
-void tetris::buildGameBoard(){
+void tetris::buildGameBoard(std::string &line, uint16_t m){
+
+    uint16_t offset = originOffsetTettris.x - 1;
+    // Fill left boundary
+    line[offset++] = '<';
+    line[offset++] = '!';
+
+    // Fill board with empty blocks
+    for(uint16_t n = 0; n < tetrisSize.cols - 4; n++){
+        if(n % 2)
+            line[n + offset] = '.';
+        else
+            line[n + offset] = ' ';
+    }
+
+    // Fill sections where shapes exist
+    std::string boardM = gameBoard.getRow(m);
+    for(uint16_t l = 0; l < boardM.size(); l++){
+        if(boardM[l] == 'A' || boardM[l] == 'L'){
+            line[offset + 2*l] = '[';
+            line[offset + 2*l + 1] = ']';
+        }
+    }
+    // Fill the right boundary
+    offset += tetrisSize.cols - 4;
+    line[offset++] = '!';
+    line[offset++] = '>';
+
+}
+
+void tetris::buildScreen(){
 
 
     s_size frame = getFrameSize();
@@ -176,35 +217,10 @@ void tetris::buildGameBoard(){
 
     for(uint16_t m = 0; m < tetrisSize.rows - 2; m++){
 
-        offset = originOffsetInfoLeft.x - 1;
-        // assign info box
-        // line.replace()
-
-        offset = originOffsetTettris.x - 1;
-        // Fill left boundary
-        line[offset++] = '<';
-        line[offset++] = '!';
-
-        // Fill board with empty blocks
-        for(uint16_t n = 0; n < tetrisSize.cols - 4; n++){
-            if(n % 2)
-                line[n + offset] = '.';
-            else
-                line[n + offset] = ' ';
-        }
-
-        // Fill sections where shapes exist
-        std::string boardM = gameBoard.getRow(m);
-        for(uint16_t l = 0; l < boardM.size(); l++){
-            if(boardM[l] == 'A' || boardM[l] == 'L'){
-                line[offset + 2*l] = '[';
-                line[offset + 2*l + 1] = ']';
-            }
-        }
-        // Fill the right boundary
-        offset += tetrisSize.cols - 4;
-        line[offset++] = '!';
-        line[offset++] = '>';
+        // Takes line to be used for printing
+        // and row being built
+        buildInfoBoard(line, m);
+        buildGameBoard(line, m);
 
         // Update matrix to print to terminal
         updateFrameRow(line, m);
