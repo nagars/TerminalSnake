@@ -371,23 +371,25 @@ infoBoard::infoBoard(){
     }
 
     // Build the matrix
-    boardMatrix[fullLinePos.y].replace(0, fullLinePos.x - 1, "Full Lines: ");
+    boardMatrix[fullLinePos.y].replace(0, 12, "Full Lines: ");
     setFullLines(0);
-    boardMatrix[levelPos.y].replace(0,levelPos.x - 1, "Level: ");
+    boardMatrix[levelPos.y].replace(0, 7, "Level: ");
     setLevel(1);
-    boardMatrix[scorePos.y].replace(0, scorePos.x - 1, "Score: ");
+    boardMatrix[scorePos.y].replace(0, 7, "Score: ");
     setScore(0);
-    boardMatrix[timePos.y].replace(0, timePos.x - 1, "Time: ");
+    boardMatrix[timePos.y].replace(0, 6, "Time: ");
 }
 
 void infoBoard::setLevel(uint16_t level){
 
-     boardMatrix[levelPos.y].replace(levelPos.x, 4, std::to_string(level));
+    std::string str = std::to_string(level);
+    boardMatrix[levelPos.y].replace(levelPos.x, str.length(), str.c_str());
 }
 
 void infoBoard::setScore(uint16_t score){
 
-    boardMatrix[scorePos.y].replace(scorePos.x, 4, std::to_string(score));
+    std::string str = std::to_string(score);
+    boardMatrix[scorePos.y].replace(scorePos.x, str.length(), str.c_str());
 }
 
 void infoBoard::setTime(uint16_t minutes, uint16_t seconds){
@@ -405,13 +407,14 @@ void infoBoard::setTime(uint16_t minutes, uint16_t seconds){
     else if(seconds < 60)
         strMinutes = std::to_string(seconds);
 
-    boardMatrix[timePos.y].replace(timePos.x, 2, strMinutes);
-    boardMatrix[timePos.y].replace(timePos.x + 3, 2, strSeconds);
+    boardMatrix[timePos.y].replace(timePos.x, strMinutes.length(), strMinutes.c_str());
+    boardMatrix[timePos.y].replace(timePos.x + 3, strSeconds.length(), strSeconds.c_str());
 }
 
 void infoBoard::setFullLines(uint16_t lines){
 
-    boardMatrix[fullLinePos.y].replace(fullLinePos.x, 3, std::to_string(lines));
+    std::string str = std::to_string(lines);
+    boardMatrix[fullLinePos.y].replace(fullLinePos.x, str.length(), str.c_str());
 }
 
 void infoBoard::setNextShape(block shape){
@@ -433,7 +436,8 @@ void infoBoard::setNextShape(block shape){
 std::string infoBoard::getRow(uint8_t n){
 
     if(n >= boardMatrix.size()){
-        return " ";
+        std::string row(infoBoardSize.cols, ' ');
+        return row;
     }
 
     return boardMatrix[n];    

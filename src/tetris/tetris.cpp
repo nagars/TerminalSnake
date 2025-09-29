@@ -158,11 +158,15 @@ void tetris::buildInfoBoard(std::string& line, uint16_t m){
     uint16_t offset = originOffsetInfoLeft.x - 1;
     std::string boardM = scoreBoard.getRow(m);
     
-    for(uint16_t l = 0; l < boardM.size(); l++){
-        if(boardM[l] == 'A' || boardM[l] == 'L'){
-            line[offset + 2*l] = '[';
-            line[offset + 2*l + 1] = ']';
-        }
+    if(m < 12)
+       line.replace((size_t)offset, (size_t)infoLeftSize.cols, boardM.c_str());
+    else{
+        // for(uint16_t l = 0; l < boardM.size(); l++){
+        //     if(boardM[l] == '*'){
+        //         line[offset + 2*l] = '[';
+        //         line[offset + 2*l + 1] = ']';
+        //     }
+        // }
     }
 
 }

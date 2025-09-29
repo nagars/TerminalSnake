@@ -74,7 +74,7 @@ class infoBoard{
     const s_pos levelPos = {.x = 8, .y = 1};
     const s_pos scorePos = {.x = 8, .y = 2};
     const s_pos timePos = {.x = 7, .y = 3};
-    const s_pos shapePos = {.x = 13, .y = 10}; 
+    const s_pos shapePos = {.x = 13, .y = 8}; 
 
     protected:
 };
