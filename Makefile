@@ -28,7 +28,7 @@ $(TARGET): $(OBJS)
 # This rule will be used for each source file
 build/%.o: src/%.cpp
 	@mkdir -p build # Create the build directory if it doesn't exist
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 # Rule to clean up the project
 clean:

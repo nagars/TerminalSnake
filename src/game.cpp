@@ -18,7 +18,11 @@
 // Tracks if a signal has been received to terminate
 bool sigCaught = false;
 
-snakeGame::snakeGame() : frame((fps)20){
+#ifdef NOTHREAD
+snakeGame::snakeGame(): frame(){
+#else
+snakeGame::snakeGame() : frame((fps)18){
+#endif
 
 // Change terminal settings to a non-blocking read
 struct termios attr;
@@ -197,6 +201,10 @@ void snakeGame::updateFrameLayout(void){
     updateFrameElement(sneakySnake.getDesign(), pos.y, pos.x);
 
     releaseFrameRenderer();
+
+#ifdef NOTHREAD
+    printFrame();
+#endif
 }
 
 
